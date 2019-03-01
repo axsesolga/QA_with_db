@@ -358,11 +358,14 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
             if q[0] == qa.null_question:
                 answers.append(qa.answer)
                 continue
-    return  answers
+    return answers
 
 
 
 ########################################################################################################################
+
+
+
 
 addNewQAtoBase("яблоки", "test2", nullFrom=False)
 null_q_arr = getNullQuestionsFromDB()
