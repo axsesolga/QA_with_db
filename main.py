@@ -298,10 +298,12 @@ def trainModel(path, wordsArr, restart=False):
 def countVectorForNullQuestion(question, model):
     arr_q = question.split(' ')
     good_words = []
+
+    print('getting vector for question:', arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
-
+    print('good words::', good_words)
     vector = model.wv.__getitem__(good_words[0])*1
     for word in good_words:
         vector = vector + model.wv.__getitem__(word)
@@ -367,12 +369,10 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 
 
 
-addNewQAtoBase("яблоки", "test2", nullFrom=False)
 null_q_arr = getNullQuestionsFromDB()
+model = trainModel('QA.w2v', null_q_arr, restart=True)
+question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 
-model = trainModel('QA.w2v', null_q_arr, restart=False)
-question_model = getQuestionModel(null_q_arr, model, loadOldModel=True)
+print(getAnswers("вступительные испытания", model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False))
 
-print(getAnswers("яблоко от яблони о", model, question_model, getListOfQAfromDB(), addNewQuestionToModel=True))
-print(list(question_model.wv.vocab))
 
