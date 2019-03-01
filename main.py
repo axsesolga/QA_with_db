@@ -337,10 +337,12 @@ def showModel(model):
     result = pca.fit_transform(X)
    # create a scatter plot of the projection
     pyplot.scatter(result[:, 0], result[:, 1])
+    pyplot.xlim(-0.003, 0.003)
+    pyplot.ylim(-0.003, 0.003)
     words = model.wv.vocab
-
     for i, word in enumerate(words):
-       pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
+        pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
+
     pyplot.show()
 
 ########################################################################################################################
@@ -373,21 +375,22 @@ null_q_arr = getNullQuestionsFromDB()
 model = trainModel('QA.w2v', null_q_arr, restart=True)
 question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 print(model.wv.vocab)
-
+#showModel(model)
 
 
 import telebot
 
-token = '713680560:AAG65APKYH5mZy69dpPcwLYHZ47Rv1JavRE'
+token = '774853254:AAFB-BStBb4f3p9ts3TZ7i7Qx5Sw6m_vWJk'
 bot = telebot.TeleBot(token)
 
 print('ready')
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
+
     if message.text == '/start':
-        bot.send_message(message.chat.id, 'Прив')
-    else :
-        answers = getAnswers(message.text, model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+        bot.send_message(message.chat.id, 'Приветствую! ')
+    else:
+        answers = getAnswers(message.text, model, question_model, getListOfQAfromDB(), addNewQuestionToModel=True)
         print(answers)
         bot.send_message(message.chat.id, answers[0])
 
