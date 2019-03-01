@@ -216,12 +216,13 @@ def stringNullifier(str):
 def getStringWithWordsFromModel(q_, srcModel, nullForm = False):
     #print('simplify to null form with words from model: ', q_)
     if not nullForm:
-        q = stringNullifier(q_)
+        q_ = stringNullifier(q_)
 
-    q = q.split(' ')
+    q = q_.split(' ')
     good_words = []
     for word in q:
-        if word in list(srcModel.wv.vocab):
+        print('check word in vocab:', word)
+        if word in srcModel.wv.vocab:
             good_words.append(word)
     return ' '.join(good_words)
 
@@ -299,11 +300,10 @@ def countVectorForNullQuestion(question, model):
     arr_q = question.split(' ')
     good_words = []
 
-    print('getting vector for question:', arr_q)
+    #print('getting vector for question:', arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
-    print('good words::', good_words)
     vector = model.wv.__getitem__(good_words[0])*1
     for word in good_words:
         vector = vector + model.wv.__getitem__(word)
@@ -348,7 +348,7 @@ def showModel(model):
 def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=False, targetModelPath='question_model.w2v'):
     #print('searching for answer: ', question)
     null_q = getStringWithWordsFromModel(question, srcModel, nullForm=False)
-
+    print(null_q)
     if addNewQuestionToModel:
         targetModel.wv.add(weights=countVectorForNullQuestion(null_q, model=srcModel), entities=null_q, replace=False)
         targetModel.save(targetModelPath)
@@ -372,7 +372,24 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 null_q_arr = getNullQuestionsFromDB()
 model = trainModel('QA.w2v', null_q_arr, restart=True)
 question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
+print(model.wv.vocab)
 
-print(getAnswers("вступительные испытания", model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False))
 
 
+import telebot
+
+token = '713680560:AAG65APKYH5mZy69dpPcwLYHZ47Rv1JavRE'
+bot = telebot.TeleBot(token)
+
+print('ready')
+@bot.message_handler(content_types=["text"])
+def repeat_all_messages(message):
+    if message.text == '/start':
+        bot.send_message(message.chat.id, 'Прив')
+    else :
+        answers = getAnswers(message.text, model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+        print(answers)
+        bot.send_message(message.chat.id, answers[0])
+
+if __name__ == '__main__':
+ bot.polling(none_stop=True)
