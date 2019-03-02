@@ -377,7 +377,7 @@ question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 print(model.wv.vocab)
 #showModel(model)
 
-
+'''
 import telebot
 
 token = '774853254:AAFB-BStBb4f3p9ts3TZ7i7Qx5Sw6m_vWJk'
@@ -387,8 +387,11 @@ print('ready')
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
 
+    first_m = 'Здравствуйте! Этот FAQ-бот поможет Вам получить ответы на самые часто задаваемые вопросы касательно учебы в ВШЭ. Правила пользования ботом:\n' \
+              '-Содержание вопросов должно быть сформулировано кратко и без лишней информации\n-Слова в вопросе не должны содержать ошибок\n' \
+              'Так как проект новый, база вопросов не столь велика, но мы работаем над ее увеличением!\n Ожидание ответа: до 20 секунд'
     if message.text == '/start':
-        bot.send_message(message.chat.id, 'Приветствую! ')
+        bot.send_message(message.chat.id, first_m)
     else:
         answers = getAnswers(message.text, model, question_model, getListOfQAfromDB(), addNewQuestionToModel=True)
         print(answers)
@@ -396,3 +399,4 @@ def repeat_all_messages(message):
 
 if __name__ == '__main__':
  bot.polling(none_stop=True)
+'''
