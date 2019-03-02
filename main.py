@@ -303,6 +303,7 @@ def addNewQAtoBase(_qa, srcModel, targetModel, path = 'QA.db'):
     null_q_arr = getNullQuestionsFromDB()
     srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
+    return srcModel, targetModel
 
 ########################################################################################################################
 
@@ -317,8 +318,8 @@ def countVectorForNullQuestion(question, model):
     good_words = []
 
     #print('getting vector for question:', arr_q)
-    print(model.wv.vocab)
-    print(arr_q)
+    #print(model.wv.vocab)
+    #print(arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
@@ -368,7 +369,7 @@ def showModel(model):
 def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=False, targetModelPath='question_model.w2v'):
     #print('searching for answer: ', question)
     null_q = getStringWithWordsFromModel(question, srcModel, nullForm=False)
-    print(null_q)
+    #print(null_q)
     if addNewQuestionToModel:
         targetModel.wv.add(weights=countVectorForNullQuestion(null_q, model=srcModel), entities=null_q, replace=False)
         targetModel.save(targetModelPath)
@@ -395,7 +396,7 @@ print(question_model.wv.vocab)
 #showModel(model)
 
 test_qa = qa(-1, 'военная кафедра', 'answer2', nullForm= False)
-addNewQAtoBase(test_qa, model, question_model)
+model, question_model = addNewQAtoBase(test_qa, model, question_model)
 
 print(model.wv.vocab)
 print(question_model.wv.vocab)
