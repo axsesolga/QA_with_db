@@ -119,11 +119,11 @@ def process(pipeline, text='Строка', keep_pos=True, keep_punct=False):
             continue
         if pos in entities:
             if '|' not in feats:
-                tagged_propn.append('%s_%s' % (lemma, pos))
+                tagged_propn.append('%s' % (lemma))
                 continue
             morph = {el.split('=')[0]: el.split('=')[1] for el in feats.split('|')}
             if 'Case' not in morph or 'Number' not in morph:
-                tagged_propn.append('%s_%s' % (lemma, pos))
+                tagged_propn.append('%s' % (lemma))
                 continue
             if not named:
                 named = True
@@ -135,27 +135,25 @@ def process(pipeline, text='Строка', keep_pos=True, keep_punct=False):
                     named = False
                     past_lemma = '::'.join(memory)
                     memory = []
-                    tagged_propn.append(past_lemma + '_PROPN ')
+                    tagged_propn.append(past_lemma)
             else:
                 named = False
                 past_lemma = '::'.join(memory)
                 memory = []
-                tagged_propn.append(past_lemma + '_PROPN ')
-                tagged_propn.append('%s_%s' % (lemma, pos))
+                tagged_propn.append(past_lemma)
+                tagged_propn.append('%s' % (lemma))
         else:
             if not named:
                 if pos == 'NUM' and token.isdigit():  # Заменяем числа на xxxxx той же длины
                     lemma = num_replace(token)
-                tagged_propn.append('%s_%s' % (lemma, pos))
+                tagged_propn.append('%s' % (lemma))
             else:
                 named = False
                 past_lemma = '::'.join(memory)
                 memory = []
-                tagged_propn.append(past_lemma + '_PROPN ')
-                tagged_propn.append('%s_%s' % (lemma, pos))
+                tagged_propn.append(past_lemma)
+                tagged_propn.append('%s' % (lemma))
 
-    if not keep_punct:
-        tagged_propn = [word for word in tagged_propn if word.split('_')[1] != 'PUNCT']
     if not keep_pos:
         tagged_propn = [word.split('_')[0] for word in tagged_propn]
     return tagged_propn
@@ -235,7 +233,7 @@ class qa:
     def __init__(self, id, question, answer, nullForm = False):
         self.id = id
         self.answer = answer
-
+        self.question = question
         if not nullForm:
             self.null_question = stringNullifier(question)
         else:
@@ -243,6 +241,19 @@ class qa:
 
     def __str__(self):
         return str(self.id) + ' || question=' + self.null_question + ' || answer= ' + self.answer
+
+
+def uploadQAfromXLS(xls_file_name, srcModel, targetModel, dbFile='QA.db'):
+    listOfQA = []
+    #upload from excel file with path and name = file_name
+    #...
+
+            #это добавление элемента в БД, вызывай для каждого спраснутого элемента, ID не меняй, похуй на него
+            #new_qa=qa(-1, вопрос_текущей_строки, ответ_текущей_строки, nullForm=False)  #-создаем объект QA
+            #addNewQAtoBase(new_qa, srcModel, targetModel, path=dbFile)
+            #...listOfQA.append(new_qa) # пихаем в массив который будет ретернить
+
+    #return: listOfQA - массив с объектами класса QA
 
 #при чтении если отсуствует элемент в null_questions сам его создает
 def getListOfQAfromDB(path = 'QA.db'):
@@ -262,7 +273,8 @@ def getListOfQAfromDB(path = 'QA.db'):
         #qa(id, question, answer, nullQuestionGiven)
         if not row[3]:
             new_q = qa(row[0], row[1], row[2], nullForm=False)
-
+            new_q.null_question = new_q.null_question.replace('"', '')
+            new_q.null_question = new_q.null_question.replace('  ', ' ')
             c.execute('''UPDATE qa SET null_question = %s WHERE id = %s''' %('"' + new_q.null_question + '"', str(new_q.id)))
             connection.commit()
             out.append(new_q)
@@ -277,16 +289,20 @@ def getNullQuestionsFromDB(path = 'QA.db'):
         null_q_arr.append(item.null_question.split(' '))
     return null_q_arr
 
-def addNewQAtoBase(question, answer, nullFrom = False, path = 'QA.db'):
-    null_q = question
-    if not nullFrom:
-        null_q = stringNullifier(question)
-
+############################
+## для добавления из admin состояния
+import time
+def addNewQAtoBase(_qa, srcModel, targetModel, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
-    c.execute('''INSERT OR IGNORE INTO qa (question, answer, null_question) VALUES (%s,%s,%s)''' % ('\'' + question + '\'', '\'' + answer + '\'', '\''+null_q+'\''))
+    c.execute('''INSERT OR IGNORE INTO qa (question, answer, null_question) VALUES (%s,%s,%s)''' % ('\'' + _qa.question + '\'', '\'' + _qa.answer + '\'', '\''+_qa.null_question+'\''))
     connection.commit()
     connection.close()
+    #доучиваем модель
+
+    null_q_arr = getNullQuestionsFromDB()
+    srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
+    targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
 
 ########################################################################################################################
 
@@ -301,6 +317,8 @@ def countVectorForNullQuestion(question, model):
     good_words = []
 
     #print('getting vector for question:', arr_q)
+    print(model.wv.vocab)
+    print(arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
@@ -364,8 +382,6 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
                 continue
     return answers
 
-
-
 ########################################################################################################################
 
 
@@ -375,7 +391,15 @@ null_q_arr = getNullQuestionsFromDB()
 model = trainModel('QA.w2v', null_q_arr, restart=True)
 question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 print(model.wv.vocab)
+print(question_model.wv.vocab)
 #showModel(model)
+
+test_qa = qa(-1, 'военная кафедра', 'answer2', nullForm= False)
+addNewQAtoBase(test_qa, model, question_model)
+
+print(model.wv.vocab)
+print(question_model.wv.vocab)
+
 
 '''
 import telebot
