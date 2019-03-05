@@ -332,6 +332,12 @@ def getQuestionModel(null_q_arr, srcModel, loadOldModel = False):
         question_model.wv.add(weights=countVectorForNullQuestion(question, model=srcModel), entities=question, replace=False)
 
     question_model.save('question_model.w2v')
+
+    null_vector = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    question_model.wv.add(weights=null_vector, entities='Вы задали некорректный вопрос или пока такого вопроса нет в базе. Пожалуйста, перефразируете вопрос или свяжитесь с администрацией', replace=False)
+
+
     return question_model
 
 def showModel(model):
@@ -384,7 +390,6 @@ class _userVK:
             self.superUser = False
     def __repr__(self):
         return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
-
 class _userTG:
     onMenu = 0
 
@@ -420,8 +425,6 @@ def getUsersFromDB_VK(path = 'QA.db'):
         users.append(_userVK(row[0], row[1]))
     connection.close()
     return users
-
-
 def getUsersFromDB_TG(path = 'QA.db'):
     users = []
 
@@ -441,7 +444,6 @@ def getUsersFromDB_TG(path = 'QA.db'):
         users.append(new_user)
     connection.close()
     return users
-
 def changeSuperUser_VK(id, superUser, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -452,7 +454,6 @@ def changeSuperUser_TG(login, superUser, path = 'QA.db'):
     c = connection.cursor()
     c.execute('''UPDATE OR IGNORE usersTG SET superUser = %s WHERE login = %s''' % (superUser, login))
     connection.commit()
-
 def addUser_VK(id, superUser = 0, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -464,7 +465,6 @@ def addUser_VK(id, superUser = 0, path = 'QA.db'):
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
-
 def addUser_TG(login, superUser = 0, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -472,7 +472,6 @@ def addUser_TG(login, superUser = 0, path = 'QA.db'):
     connection.commit()
     connection.close()
     return getUsersFromDB_TG(path)
-
 def removeUser_VK(id, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -480,7 +479,6 @@ def removeUser_VK(id, path = 'QA.db'):
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
-
 def removeUser_TG(login, path = 'QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -494,11 +492,6 @@ def removeUser_TG(login, path = 'QA.db'):
 
 
 
-
-
-null_q_arr = getNullQuestionsFromDB()
-model = trainModel('QA.w2v', null_q_arr, restart=True)
-question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 #print(model.wv.vocab)
 #print(question_model.wv.vocab)
 ##showModel(model)
