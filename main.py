@@ -607,6 +607,7 @@ class TelegramThread(threading.Thread):
         model = trainModel('QA.w2v', null_q_arr, restart=True)
         question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 
+        print('TG ready')
         @self.bot.message_handler(content_types=["text"])
         def repeat_all_messages(message):
             admin_id = self.getId(message.chat.username, telegram_admin_list)
@@ -782,25 +783,25 @@ class TelegramThread(threading.Thread):
 
                         telegram_admin_list[admin_id].onMenu = 6
                     else:
-                        # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                        #                     addNewQuestionToModel=True)
-                        # print(answers)
+                        answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                            addNewQuestionToModel=False)
+                        print(answers)
                         self.bot.send_message(message.chat.id,
-                                              'keksuperadmin',
+                                              answers[0],
                                               reply_markup=self.telegram_super_keyboard)
                 else:
-                    # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                    #                     addNewQuestionToModel=True)
-                    # print(answers)
+                    answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                        addNewQuestionToModel=False)
+                    print(answers)
                     self.bot.send_message(message.chat.id,
-                                          'kekadmin',
+                                          answers[0],
                                           reply_markup=self.telegram_keyboard)
             else:
-                # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                #                     addNewQuestionToModel=True)
-                # print(answers)
+                answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                     addNewQuestionToModel=True)
+                print(answers)
                 self.bot.send_message(message.chat.id,
-                                      'kek',
+                                      answers[0],
                                       reply_markup=self.telegram_null_keyboard)
 
         self.bot.polling(none_stop=True)
@@ -894,7 +895,7 @@ class VkThread(threading.Thread):
         null_q_arr = getNullQuestionsFromDB()
         model = trainModel('QA.w2v', null_q_arr, restart=True)
         question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
-
+        print('VK ready')
         while True:
             for event in self.longpoll.listen():
                 if event.type == VkEventType.MESSAGE_NEW and event.from_user and not event.from_me:
@@ -1109,29 +1110,29 @@ class VkThread(threading.Thread):
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
                             else:
-                                answers = 'wow1'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                #   addNewQuestionToModel=True)
+                                answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                  addNewQuestionToModel=False)
                                 print(answers)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
-                                                        'message': answers,
+                                                        'message': answers[0],
                                                         'random_id': 0, 'keyboard': self.vk_super_keyboard})
                         else:
-                            answers = 'wow2'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                            #  addNewQuestionToModel=True)
+                            answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                              addNewQuestionToModel=False)
                             print(answers)
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
-                                                    'message': answers,
+                                                    'message': answers[0],
                                                     'random_id': 0, 'keyboard': self.vk_keyboard})
 
                     else:
-                        answers = 'wow3'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                        # addNewQuestionToModel=True)
+                        answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                         addNewQuestionToModel=False)
                         print(answers)
                         self.vk_session.method('messages.send',
                                                {'user_id': event.user_id,
-                                                'message': answers,
+                                                'message': answers[0],
                                                 'random_id': 0, 'keyboard': self.vk_null_keyboard})
 
 
@@ -1143,9 +1144,7 @@ tel = TelegramThread()
 
 vk_admin_list = getUsersFromDB_VK()
 
-null_q_arr = getNullQuestionsFromDB()
-model = trainModel('QA.w2v', null_q_arr, restart=True)
-question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
-
 vk.start()
 tel.start()
+
+
