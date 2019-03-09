@@ -18,14 +18,16 @@ import re
 ########################################################################################################################
 # This is RusVectores code from https://github.com/akutuzov/webvectors/blob/master/preprocessing/rus_preprocessing_udpipe.py
 #
-#Kutuzov A., Kuzmenko E. (2017) WebVectors: A Toolkit for Building Web Interfaces for Vector Semantic Models. In: Ignatov D. et al.
-#(eds) Analysis of Images, Social Networks and Texts. AIST 2016. Communications in Computer and Information Science, vol 661. Springer, Cham
+# Kutuzov A., Kuzmenko E. (2017) WebVectors: A Toolkit for Building Web Interfaces for Vector Semantic Models. In: Ignatov D. et al.
+# (eds) Analysis of Images, Social Networks and Texts. AIST 2016. Communications in Computer and Information Science, vol 661. Springer, Cham
 #######################################################################################################################
 def list_replace(search, replacement, text):
     search = [el for el in search if el in text]
     for c in search:
         text = text.replace(c, replacement)
     return text
+
+
 def unify_sym(text):  # принимает строку в юникоде
     text = list_replace \
         ('\u00AB\u00BB\u2039\u203A\u201E\u201A\u201C\u201F\u2018\u201B\u201D\u2019', '\u0022', text)
@@ -88,6 +90,8 @@ def unify_sym(text):  # принимает строку в юникоде
     cleaned_text = ''.join(cleaned_text)
 
     return cleaned_text
+
+
 def process(pipeline, text='Строка', keep_pos=True, keep_punct=False):
     # Если частеречные тэги не нужны (например, их нет в модели), выставьте pos=False
     # в этом случае на выход будут поданы только леммы
@@ -157,9 +161,13 @@ def process(pipeline, text='Строка', keep_pos=True, keep_punct=False):
     if not keep_pos:
         tagged_propn = [word.split('_')[0] for word in tagged_propn]
     return tagged_propn
+
+
 def num_replace(word):
     newtoken = 'x' * len(word)
     return newtoken
+
+
 def clean_token(token, misc):
     """
     :param token:  токен (строка)
@@ -170,6 +178,8 @@ def clean_token(token, misc):
     if token == 'Файл' and 'SpaceAfter=No' in misc:
         return None
     return out_token
+
+
 def clean_lemma(lemma, pos):
     """
     :param lemma: лемма (строка)
@@ -188,13 +198,15 @@ def clean_lemma(lemma, pos):
                 or out_lemma.endswith('.'):
             out_lemma = ''.join(out_lemma[:-1])
     return out_lemma
+
+
 ########################################################################################################################
-#End of RusVectores code
+# End of RusVectores code
 ########################################################################################################################
 
 
 def stringNullifier(str):
-    #print('simplify to null form: ', str)
+    # print('simplify to null form: ', str)
     # URL of the UDPipe model
     udpipe_model_url = 'https://rusvectores.org/static/models/udpipe_syntagrus.model'
 
@@ -211,8 +223,9 @@ def stringNullifier(str):
 
     return ' '.join(output)
 
-def getStringWithWordsFromModel(q_, srcModel, nullForm = False):
-    #print('simplify to null form with words from model: ', q_)
+
+def getStringWithWordsFromModel(q_, srcModel, nullForm=False):
+    # print('simplify to null form with words from model: ', q_)
     if not nullForm:
         q_ = stringNullifier(q_)
 
@@ -224,13 +237,15 @@ def getStringWithWordsFromModel(q_, srcModel, nullForm = False):
             good_words.append(word)
     return ' '.join(good_words)
 
+
 ########################################################################################################################
 
 import sqlite3
 from shutil import copyfile
 
+
 class qa:
-    def __init__(self, id, question, answer, nullForm = False):
+    def __init__(self, id, question, answer, nullForm=False):
         self.id = id
         self.answer = answer
         self.question = question
@@ -243,8 +258,8 @@ class qa:
         return str(self.id) + ' || question=' + self.null_question + ' || answer= ' + self.answer
 
 
-#при чтении если отсуствует элемент в null_questions сам его создает
-def getListOfQAfromDB(path = 'QA.db'):
+# при чтении если отсуствует элемент в null_questions сам его создает
+def getListOfQAfromDB(path='QA.db'):
     # id[0] -> quesiton[1] -> answer[2] -> null_form_question[3]
     if not os.path.isfile(path):
         copyfile("backup\\QA_zero_backup.db", path)
@@ -258,12 +273,13 @@ def getListOfQAfromDB(path = 'QA.db'):
         list_.append(line)
 
     for row in list_:
-        #qa(id, question, answer, nullQuestionGiven)
+        # qa(id, question, answer, nullQuestionGiven)
         if not row[3]:
             new_q = qa(row[0], row[1], row[2], nullForm=False)
             new_q.null_question = new_q.null_question.replace('"', '')
             new_q.null_question = new_q.null_question.replace('  ', ' ')
-            c.execute('''UPDATE qa SET null_question = %s WHERE id = %s''' %('"' + new_q.null_question + '"', str(new_q.id)))
+            c.execute(
+                '''UPDATE qa SET null_question = %s WHERE id = %s''' % ('"' + new_q.null_question + '"', str(new_q.id)))
             connection.commit()
             out.append(new_q)
         else:
@@ -271,27 +287,33 @@ def getListOfQAfromDB(path = 'QA.db'):
     connection.close()
     return out
 
-def getNullQuestionsFromDB(path = 'QA.db'):
+
+def getNullQuestionsFromDB(path='QA.db'):
     null_q_arr = []
     for item in getListOfQAfromDB(path):
         null_q_arr.append(item.null_question.split(' '))
     return null_q_arr
 
+
 ############################
 ## для добавления из admin состояния
 import time
-def addNewQAtoBase(_qa, srcModel, targetModel, path = 'QA.db'):
+
+
+def addNewQAtoBase(_qa, srcModel, targetModel, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
-    c.execute('''INSERT OR IGNORE INTO qa (question, answer, null_question) VALUES (%s,%s,%s)''' % ('\'' + _qa.question + '\'', '\'' + _qa.answer + '\'', '\''+_qa.null_question+'\''))
+    c.execute('''INSERT OR IGNORE INTO qa (question, answer, null_question) VALUES (%s,%s,%s)''' % (
+        '\'' + _qa.question + '\'', '\'' + _qa.answer + '\'', '\'' + _qa.null_question + '\''))
     connection.commit()
     connection.close()
-    #доучиваем модель
+    # доучиваем модель
 
     null_q_arr = getNullQuestionsFromDB()
     srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
     return srcModel, targetModel
+
 
 ########################################################################################################################
 
@@ -301,22 +323,24 @@ def trainModel(path, wordsArr, restart=False):
         model.save(path)
     return Word2Vec.load(path)
 
+
 def countVectorForNullQuestion(question, model):
     arr_q = question.split(' ')
     good_words = []
 
-    #print('getting vector for question:', arr_q)
-    #print(model.wv.vocab)
-    #print(arr_q)
+    # print('getting vector for question:', arr_q)
+    # print(model.wv.vocab)
+    # print(arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
-    vector = model.wv.__getitem__(good_words[0])*1
+    vector = model.wv.__getitem__(good_words[0]) * 1
     for word in good_words:
         vector = vector + model.wv.__getitem__(word)
     return vector
 
-def getQuestionModel(null_q_arr, srcModel, loadOldModel = False):
+
+def getQuestionModel(null_q_arr, srcModel, loadOldModel=False):
     if loadOldModel:
         if os.path.isfile('question_model.w2v'):
             print('old question model uploaded.')
@@ -329,26 +353,31 @@ def getQuestionModel(null_q_arr, srcModel, loadOldModel = False):
 
     for line in null_q_arr:
         question = ' '.join(line)
-        question_model.wv.add(weights=countVectorForNullQuestion(question, model=srcModel), entities=question, replace=False)
+        question_model.wv.add(weights=countVectorForNullQuestion(question, model=srcModel), entities=question,
+                              replace=False)
 
     question_model.save('question_model.w2v')
 
-    null_vector = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    question_model.wv.add(weights=null_vector, entities='Вы задали некорректный вопрос или пока такого вопроса нет в базе. Пожалуйста, перефразируете вопрос или свяжитесь с администрацией', replace=False)
-
+    null_vector = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    question_model.wv.add(weights=null_vector,
+                          entities='Вы задали некорректный вопрос или пока такого вопроса нет в базе. Пожалуйста, перефразируете вопрос или свяжитесь с администрацией',
+                          replace=False)
 
     return question_model
+
 
 def showModel(model):
     from sklearn.decomposition import PCA
     from matplotlib import pyplot
 
-   # fit a 2d PCA model to the vectors
+    # fit a 2d PCA model to the vectors
     X = model[model.wv.vocab]
     pca = PCA(n_components=2)
     result = pca.fit_transform(X)
-   # create a scatter plot of the projection
+    # create a scatter plot of the projection
     pyplot.scatter(result[:, 0], result[:, 1])
     pyplot.xlim(-0.003, 0.003)
     pyplot.ylim(-0.003, 0.003)
@@ -358,12 +387,14 @@ def showModel(model):
 
     pyplot.show()
 
+
 ########################################################################################################################
 
-def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=False, targetModelPath='question_model.w2v'):
-    #print('searching for answer: ', question)
+def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=False,
+               targetModelPath='question_model.w2v'):
+    # print('searching for answer: ', question)
     null_q = getStringWithWordsFromModel(question, srcModel, nullForm=False)
-    #print(null_q)
+    # print(null_q)
     if addNewQuestionToModel:
         targetModel.wv.add(weights=countVectorForNullQuestion(null_q, model=srcModel), entities=null_q, replace=False)
         targetModel.save(targetModelPath)
@@ -377,35 +408,38 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
                 continue
     return answers
 
+
 ########################################################################################################################
-#admin fucntions
+# admin fucntions
 class _userVK:
     onMenu = 0
 
-    def __init__(self, id, superUser = 0):
+    def __init__(self, id, superUser=0):
         self.id = id
         if superUser is 1:
             self.superUser = True
         else:
             self.superUser = False
+
     def __repr__(self):
         return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
+
+
 class _userTG:
     onMenu = 0
 
-    def __init__(self, login, superUser = 0):
+    def __init__(self, login, superUser=0):
         self.login = login
         if superUser is 1:
             self.superUser = True
         else:
             self.superUser = False
+
     def __repr__(self):
         return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
 
 
-
-
-def getUsersFromDB_VK(path = 'QA.db'):
+def getUsersFromDB_VK(path='QA.db'):
     users = []
 
     if not os.path.isfile(path):
@@ -420,12 +454,14 @@ def getUsersFromDB_VK(path = 'QA.db'):
 
     for row in list_:
         # qa(id, question, answer, nullQuestionGiven)
-        #print(row)
+        # print(row)
         print(row[0], row[1])
         users.append(_userVK(row[0], row[1]))
     connection.close()
     return users
-def getUsersFromDB_TG(path = 'QA.db'):
+
+
+def getUsersFromDB_TG(path='QA.db'):
     users = []
 
     if not os.path.isfile(path):
@@ -444,17 +480,23 @@ def getUsersFromDB_TG(path = 'QA.db'):
         users.append(new_user)
     connection.close()
     return users
-def changeSuperUser_VK(id, superUser, path = 'QA.db'):
+
+
+def changeSuperUser_VK(id, superUser, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     c.execute('''UPDATE OR IGNORE usersVK SET superUser = %s WHERE id = %s''' % (superUser, id))
     connection.commit()
-def changeSuperUser_TG(login, superUser, path = 'QA.db'):
+
+
+def changeSuperUser_TG(login, superUser, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     c.execute('''UPDATE OR IGNORE usersTG SET superUser = %s WHERE login = %s''' % (superUser, login))
     connection.commit()
-def addUser_VK(id, superUser = 0, path = 'QA.db'):
+
+
+def addUser_VK(id, superUser=0, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     if superUser is True:
@@ -465,21 +507,27 @@ def addUser_VK(id, superUser = 0, path = 'QA.db'):
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
-def addUser_TG(login, superUser = 0, path = 'QA.db'):
+
+
+def addUser_TG(login, superUser=0, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     c.execute('''INSERT OR IGNORE INTO usersTG (login, superUser) VALUES (%s,%s)''' % ('"' + login + '"', superUser))
     connection.commit()
     connection.close()
     return getUsersFromDB_TG(path)
-def removeUser_VK(id, path = 'QA.db'):
+
+
+def removeUser_VK(id, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     c.execute('''DELETE FROM usersVK WHERE id = %s''' % (id))
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
-def removeUser_TG(login, path = 'QA.db'):
+
+
+def removeUser_TG(login, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     c.execute('''DELETE FROM usersTG WHERE login = "%s"''' % (login))
@@ -491,16 +539,15 @@ def removeUser_TG(login, path = 'QA.db'):
 ########################################################################################################################
 
 
-
-#print(model.wv.vocab)
-#print(question_model.wv.vocab)
+# print(model.wv.vocab)
+# print(question_model.wv.vocab)
 ##showModel(model)
 
-#test_qa = qa(-1, 'военная кафедра', 'answer2', nullForm= False)
-#model, question_model = addNewQAtoBase(test_qa, model, question_model) # пример добавление новго вопроса в базу. Так же переучиваются текущие модели
+# test_qa = qa(-1, 'военная кафедра', 'answer2', nullForm= False)
+# model, question_model = addNewQAtoBase(test_qa, model, question_model) # пример добавление новго вопроса в базу. Так же переучиваются текущие модели
 
-#print(model.wv.vocab)
-#print(question_model.wv.vocab)
+# print(model.wv.vocab)
+# print(question_model.wv.vocab)
 
 
 ##################################################################################################################################################################################
@@ -510,23 +557,6 @@ import threading
 import telebot
 
 telegram_admin_list = []
-
-
-class user:
-    onMenu = 0
-
-    def __init__(self, id, superUser):
-        self.id = id
-        if superUser is 1:
-            self.superUser = True
-        else:
-            self.superUser = False
-
-
-tel_lexa = user('alexche3645', 1)
-vk_lexa = user(229551130, 1)
-vk_admin_list.append(vk_lexa)
-telegram_admin_list.append(tel_lexa)
 
 
 class TelegramThread(threading.Thread):
@@ -570,6 +600,12 @@ class TelegramThread(threading.Thread):
                                          self.add_super_button, self.delete_admin_button, self.delete_super_button,
                                          self.help_button)
         self.telegram_mini_keyboard.add(self.help_button, self.cancel_button)
+
+        telegram_admin_list = getUsersFromDB_TG()
+
+        null_q_arr = getNullQuestionsFromDB()
+        model = trainModel('QA.w2v', null_q_arr, restart=True)
+        question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 
         @self.bot.message_handler(content_types=["text"])
         def repeat_all_messages(message):
@@ -653,7 +689,7 @@ class TelegramThread(threading.Thread):
                                 changeSuperUser_TG(telegram_admin_list[new_admin].id,
                                                    telegram_admin_list[admin_id].superUser)
                                 telegram_admin_list[admin_id].onMenu = 0
-                                vtelegram_admin_list[new_admin].superUser = True
+                                telegram_admin_list[new_admin].superUser = True
 
                                 self.bot.send_message(message.chat.id,
                                                       'Супер администратор добавлен',
@@ -770,11 +806,11 @@ class TelegramThread(threading.Thread):
         self.bot.polling(none_stop=True)
 
 
-
 ##################################################################################################################################################################################
 
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
+
 
 class VkThread(threading.Thread):
     vk_token = "570036a833509d794b32224e32890ed0be12aee9624e0ed0905548f5a6cbcc559ad1be9c9a83ce3c50c27"
@@ -853,7 +889,6 @@ class VkThread(threading.Thread):
         self.vk_mini_keyboard = str(self.vk_mini_keyboard.decode('utf-8'))
         self.vk_null_keyboard = str(self.vk_null_keyboard.decode('utf-8'))
 
-
         vk_admin_list = getUsersFromDB_VK()
 
         null_q_arr = getNullQuestionsFromDB()
@@ -898,13 +933,14 @@ class VkThread(threading.Thread):
                                     self.vk_session.method('messages.send',
                                                            {'user_id': event.user_id,
                                                             'message': 'Вопрос добавлен',
-                                                            'random_id': 0, 'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
+                                                            'random_id': 0,
+                                                            'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
 
                                 else:
                                     self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Введите корректный вопрос',
-                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите корректный вопрос',
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             elif vk_admin_list[admin_id].onMenu == 3:
                                 try:
                                     new_admin = self.getId(int(event.text), vk_admin_list)
@@ -922,9 +958,9 @@ class VkThread(threading.Thread):
                                                                    vk_admin_list[admin_id])})
                                     else:
                                         self.vk_session.method('messages.send',
-                                                              {'user_id': event.user_id,
-                                                               'message': 'Администратор с таким id уже существует',
-                                                               'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Администратор с таким id уже существует',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
                                 except:
                                     self.vk_session.method('messages.send',
@@ -943,8 +979,6 @@ class VkThread(threading.Thread):
                                             sup = 1
                                         addUser_VK(temp_user.id, sup)
 
-
-
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
                                                                {'user_id': event.user_id,
@@ -953,10 +987,10 @@ class VkThread(threading.Thread):
                                                                    vk_admin_list[admin_id])})
                                     else:
 
-                                        changeSuperUser_VK(vk_admin_list[new_admin].id, vk_admin_list[admin_id].superUser)
+                                        changeSuperUser_VK(vk_admin_list[new_admin].id,
+                                                           vk_admin_list[admin_id].superUser)
                                         vk_admin_list[admin_id].onMenu = 0
                                         vk_admin_list[new_admin].superUser = True
-
 
                                         self.vk_session.method('messages.send',
                                                                {'user_id': event.user_id,
@@ -978,7 +1012,6 @@ class VkThread(threading.Thread):
                                         removeUser_VK(vk_admin_list[admin_for_delete].id)
 
                                         vk_admin_list.remove(vk_admin_list[admin_for_delete])
-
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
@@ -1004,7 +1037,8 @@ class VkThread(threading.Thread):
                                     if admin_for_clear != -1:
                                         vk_admin_list[admin_for_clear].superUser = 0
 
-                                        changeSuperUser_VK(vk_admin_list[admin_for_clear].id, vk_admin_list[admin_for_clear].superUser)
+                                        changeSuperUser_VK(vk_admin_list[admin_for_clear].id,
+                                                           vk_admin_list[admin_for_clear].superUser)
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
@@ -1075,16 +1109,16 @@ class VkThread(threading.Thread):
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
                             else:
-                                answers = 'wow1'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                                  #   addNewQuestionToModel=True)
+                                answers = 'wow1'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                #   addNewQuestionToModel=True)
                                 print(answers)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
                                                         'message': answers,
                                                         'random_id': 0, 'keyboard': self.vk_super_keyboard})
                         else:
-                            answers = 'wow2'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                               #  addNewQuestionToModel=True)
+                            answers = 'wow2'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                            #  addNewQuestionToModel=True)
                             print(answers)
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
@@ -1092,8 +1126,8 @@ class VkThread(threading.Thread):
                                                     'random_id': 0, 'keyboard': self.vk_keyboard})
 
                     else:
-                        answers = 'wow3'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                             #addNewQuestionToModel=True)
+                        answers = 'wow3'  # getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                        # addNewQuestionToModel=True)
                         print(answers)
                         self.vk_session.method('messages.send',
                                                {'user_id': event.user_id,
@@ -1105,8 +1139,7 @@ class VkThread(threading.Thread):
 
 
 vk = VkThread()
-#tel = TelegramThread()
-
+tel = TelegramThread()
 
 vk_admin_list = getUsersFromDB_VK()
 
@@ -1115,4 +1148,4 @@ model = trainModel('QA.w2v', null_q_arr, restart=True)
 question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 
 vk.start()
-#tel.start()
+tel.start()
