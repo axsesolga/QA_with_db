@@ -503,19 +503,271 @@ def removeUser_TG(login, path = 'QA.db'):
 #print(question_model.wv.vocab)
 
 
-import json
-import threading
-import telebot
-
-
 ##################################################################################################################################################################################
 
 import json
 import threading
 import telebot
 
-vk_admin_list = getUsersFromDB_VK()
 telegram_admin_list = []
+
+
+class user:
+    onMenu = 0
+
+    def __init__(self, id, superUser):
+        self.id = id
+        if superUser is 1:
+            self.superUser = True
+        else:
+            self.superUser = False
+
+
+tel_lexa = user('alexche3645', 1)
+vk_lexa = user(229551130, 1)
+vk_admin_list.append(vk_lexa)
+telegram_admin_list.append(tel_lexa)
+
+
+class TelegramThread(threading.Thread):
+    telegram_token = '713680560:AAG65APKYH5mZy69dpPcwLYHZ47Rv1JavRE'
+    bot = telebot.TeleBot(telegram_token)
+    first_m = 'Здравствуйте! Этот FAQ-бот поможет Вам получить ответы на самые часто задаваемые вопросы касательно учебы в ВШЭ. Правила пользования ботом:\n' \
+              '-Содержание вопросов должно быть сформулировано кратко и без лишней информации\n-Слова в вопросе не должны содержать ошибок\n' \
+              'Так как проект новый, база вопросов не столь велика, но мы работаем над ее увеличением!\n Ожидание ответа: до 20 секунд'
+
+    telegram_keyboard = telebot.types.ReplyKeyboardMarkup()
+    telegram_super_keyboard = telebot.types.ReplyKeyboardMarkup()
+    telegram_mini_keyboard = telebot.types.ReplyKeyboardMarkup()
+    telegram_null_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
+
+    download_button = telebot.types.KeyboardButton('Загрузить базу данных')
+    add_ask_button = telebot.types.KeyboardButton('Добавить вопрос в базу данных')
+    add_admin_button = telebot.types.KeyboardButton('Добавить администратора')
+    add_super_button = telebot.types.KeyboardButton('Добавить супер права')
+    delete_admin_button = telebot.types.KeyboardButton('Удалить администратора')
+    delete_super_button = telebot.types.KeyboardButton('Удалить супер права')
+    help_button = telebot.types.KeyboardButton('Помощь')
+    cancel_button = telebot.types.KeyboardButton('Отменить')
+
+    def getId(self, id, admin_list):
+        for idx, val in enumerate(admin_list):
+            if val.id == id:
+                return idx
+        return -1
+
+    def return_keyboard(self, admin):
+        if admin.superUser:
+            return self.telegram_super_keyboard
+        else:
+            return self.telegram_keyboard
+
+    def run(self):
+
+        self.telegram_keyboard.add(self.download_button, self.add_ask_button, self.help_button)
+        self.telegram_super_keyboard.add(self.download_button, self.add_ask_button, self.help_button,
+                                         self.add_admin_button,
+                                         self.add_super_button, self.delete_admin_button, self.delete_super_button,
+                                         self.help_button)
+        self.telegram_mini_keyboard.add(self.help_button, self.cancel_button)
+
+        @self.bot.message_handler(content_types=["text"])
+        def repeat_all_messages(message):
+            admin_id = self.getId(message.chat.username, telegram_admin_list)
+            if message.text == '/start':
+                self.bot.send_message(message.chat.id, self.first_m)
+
+
+            elif admin_id != -1:
+                if telegram_admin_list[admin_id].onMenu != 0:
+                    if message.text == "Отменить":
+                        self.bot.send_message(message.chat.id, 'Отмененно',
+                                              reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                        telegram_admin_list[admin_id].onMenu = 0
+
+                    elif message.text == "Помощь":
+                        if telegram_admin_list[admin_id].superUser:
+                            self.bot.send_message(message.chat.id,
+                                                  'супер админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                                  reply_markup=self.telegram_mini_keyboard)
+                        else:
+                            self.bot.send_message(message.chat.id,
+                                                  'обычный админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                                  reply_markup=self.telegram_mini_keyboard)
+
+                    elif telegram_admin_list[admin_id].onMenu == 2:
+                        text_arr = message.text.split(':');
+                        if len(text_arr) == 2:
+                            new_qa = qa(0, text_arr[0], text_arr[1], nullForm=False)
+                            print(list(question_model.wv.vocab))
+                            model, question_model = addNewQAtoBase(new_qa, model, question_model)
+                            print(list(question_model.wv.vocab))
+
+                            telegram_admin_list[admin_id].onMenu = 0
+                            self.bot.send_message(message.chat.id,
+                                                  'Вопрос добавлен',
+                                                  reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                        else:
+                            self.bot.send_message(message.chat.id,
+                                                  'Введите корректный вопрос',
+                                                  reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                    elif telegram_admin_list[admin_id].onMenu == 3:
+                        try:
+                            new_admin = self.getId(int(message.text), telegram_admin_list)
+                            if new_admin == -1:
+                                new_user = _userTG(int(message.text), 0)
+                                telegram_admin_list.append(new_user)
+
+                                addUser_TG(new_user.id, new_user.superUser)
+
+                                telegram_admin_list[admin_id].onMenu = 0
+                                self.bot.send_message(message.chat.id,
+                                                      'Админ добавлен',
+                                                      reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                            else:
+                                self.bot.send_message(message.chat.id,
+                                                      'Админ с таким id уже существует',
+                                                      reply_markup=self.telegram_mini_keyboard)
+                        except:
+                            self.bot.send_message(message.chat.id,
+                                                  'Введите корректный id',
+                                                  reply_markup=self.telegram_mini_keyboard)
+                    elif telegram_admin_list[admin_id].onMenu == 4:
+                        try:
+                            new_admin = self.getId(int(message.text), telegram_admin_list)
+                            if new_admin == -1:
+                                temp_user = _userTG(int(message.text), 1)
+                                telegram_admin_list.append(temp_user)
+
+                                sup = 0
+                                if temp_user.superUser:
+                                    sup = 1
+                                addUser_TG(temp_user.id, sup)
+
+                                telegram_admin_list[admin_id].onMenu = 0
+                                self.bot.send_message(message.chat.id,
+                                                      'Супер администратор добавлен',
+                                                      reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                            else:
+
+                                changeSuperUser_TG(telegram_admin_list[new_admin].id,
+                                                   telegram_admin_list[admin_id].superUser)
+                                telegram_admin_list[admin_id].onMenu = 0
+                                vtelegram_admin_list[new_admin].superUser = True
+
+                                self.bot.send_message(message.chat.id,
+                                                      'Супер администратор добавлен',
+                                                      reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                        except:
+                            self.bot.send_message(message.chat.id,
+                                                  'Введите корректный id',
+                                                  reply_markup=self.telegram_mini_keyboard)
+                    elif telegram_admin_list[admin_id].onMenu == 5:
+                        try:
+                            admin_for_delete = self.getId(int(message.text), telegram_admin_list)
+                            if not admin_for_delete is -1:
+                                removeUser_TG(telegram_admin_list[admin_for_delete].id)
+                                telegram_admin_list.remove(telegram_admin_list[admin_for_delete])
+
+                                telegram_admin_list[admin_id].onMenu = 0
+                                self.bot.send_message(message.chat.id,
+                                                      'Администратор удален',
+                                                      reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                            else:
+                                self.bot.send_message(message.chat.id,
+                                                      'Нет админа с таким id',
+                                                      reply_markup=self.telegram_mini_keyboard)
+                        except:
+                            self.bot.send_message(message.chat.id,
+                                                  'Введите корректный id',
+                                                  reply_markup=self.telegram_mini_keyboard)
+                    elif telegram_admin_list[admin_id].onMenu == 6:
+                        try:
+                            admin_for_clear = self.getId(int(message.text), telegram_admin_list)
+                            if admin_for_clear != -1:
+                                telegram_admin_list[admin_for_clear].superUser = 0
+
+                                changeSuperUser_TG(telegram_admin_list[admin_for_clear].id,
+                                                   telegram_admin_list[admin_for_clear].superUser)
+
+                                telegram_admin_list[admin_id].onMenu = 0
+                                self.bot.send_message(message.chat.id,
+                                                      'Супер пользователь добавлен',
+                                                      reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                            else:
+                                self.bot.send_message(message.chat.id,
+                                                      'Нет админа с таким id',
+                                                      reply_markup=self.telegram_mini_keyboard)
+                        except:
+                            self.bot.send_message(message.chat.id,
+                                                  'Введите корректный id',
+                                                  reply_markup=self.telegram_mini_keyboard)
+                elif message.text == "Загрузить базу данных":
+                    self.bot.send_message(message.chat.id,
+                                          'baza',
+                                          reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                elif message.text == "Добавить вопрос в базу данных":
+                    self.bot.send_message(message.chat.id,
+                                          'Введите вопрос в формате Вопрос : Ответ',
+                                          reply_markup=self.telegram_mini_keyboard)
+                    telegram_admin_list[admin_id].onMenu = 2
+                elif message.text == "Помощь":
+                    if telegram_admin_list[admin_id].superUser:
+                        self.bot.send_message(message.chat.id,
+                                              'супер админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                              reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+                    else:
+                        self.bot.send_message(message.chat.id,
+                                              'обычный админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                              reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+
+                elif telegram_admin_list[admin_id].superUser:
+                    if message.text == "Добавить администратора":
+                        self.bot.send_message(message.chat.id,
+                                              'Введите id человека, которому хотите дать права администратора',
+                                              reply_markup=self.telegram_mini_keyboard)
+
+                        telegram_admin_list[admin_id].onMenu = 3
+
+                    elif message.text == "Добавить супер права":
+                        self.bot.send_message(message.chat.id,
+                                              'Введите id человека, которому хотите дать супер права',
+                                              reply_markup=self.telegram_mini_keyboard)
+                        telegram_admin_list[admin_id].onMenu = 4
+                    elif message.text == "Удалить администратора":
+                        self.bot.send_message(message.chat.id,
+                                              'Введите id человека, которому хотите снять права администратора',
+                                              reply_markup=self.telegram_mini_keyboard)
+                        telegram_admin_list[admin_id].onMenu = 5
+                    elif message.text == "Удалить супер права":
+                        self.bot.send_message(message.chat.id,
+                                              'Введите id человека, которому хотите снять супер права, при этом человек останется администратором',
+                                              reply_markup=self.telegram_mini_keyboard)
+
+                        telegram_admin_list[admin_id].onMenu = 6
+                    else:
+                        # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                        #                     addNewQuestionToModel=True)
+                        # print(answers)
+                        self.bot.send_message(message.chat.id,
+                                              'keksuperadmin',
+                                              reply_markup=self.telegram_super_keyboard)
+                else:
+                    # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                    #                     addNewQuestionToModel=True)
+                    # print(answers)
+                    self.bot.send_message(message.chat.id,
+                                          'kekadmin',
+                                          reply_markup=self.telegram_keyboard)
+            else:
+                # answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                #                     addNewQuestionToModel=True)
+                # print(answers)
+                self.bot.send_message(message.chat.id,
+                                      'kek',
+                                      reply_markup=self.telegram_null_keyboard)
+
+        self.bot.polling(none_stop=True)
 
 
 
@@ -671,7 +923,7 @@ class VkThread(threading.Thread):
                                     else:
                                         self.vk_session.method('messages.send',
                                                               {'user_id': event.user_id,
-                                                               'message': 'Администратор с таким id уже есть',
+                                                               'message': 'Администратор с таким id уже существует',
                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
                                 except:
@@ -779,7 +1031,7 @@ class VkThread(threading.Thread):
                         elif str(event.text) == "Добавить вопрос в базу данных":
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
-                                                    'message': 'Введите вопрос в формате  <<Вставить формат>>',
+                                                    'message': 'Введите вопрос в формате Вопрос : Ответ',
                                                     'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             vk_admin_list[admin_id].onMenu = 2
                         elif str(event.text) == "Помощь":
