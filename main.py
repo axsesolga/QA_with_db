@@ -879,7 +879,7 @@ class VkThread(threading.Thread):
         adminList = ''
         print('=============================')
         for pers in vkadminlist:
-            adminList += 'ID: ' + str(pers.id) + ' Name: ' + pers.flname + ' Super: ' + str(pers.superUser) + '\n'
+            adminList += 'ID: ' + str(pers.id) + ' Name: ' + pers.flname + ' Super: ' + str(pers.superUser) + '\n\n'
         print(adminList)
         print('=============================')
         return adminList
