@@ -426,15 +426,16 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 class _userVK:
     onMenu = 0
 
-    def __init__(self, id, superUser=0, flname='name'):
+    def __init__(self, id, superUser=0, flname=str(id)):
         self.id = id
+        self.flname = flname
         if superUser is 1:
             self.superUser = True
         else:
             self.superUser = False
 
     def __repr__(self):
-        return 'https://vk.com/id' + (str(self.id) + ' | SuperUser = ' + str(self.superUser))
+        return 'https://vk.com/id' + (str(self.id) + ' | ' + str(self.flname) + ' | SuperUser ' + str(self.superUser))
 
     #def getNameByVKid(self):
         #TODO
@@ -470,8 +471,8 @@ def getUsersFromDB_VK(path='QA.db'):
     for row in list_:
         # qa(id, question, answer, nullQuestionGiven)
         # print(row)
-        print(row[0], row[1])
-        users.append(_userVK(row[0], row[1]))
+        print(row[0], row[1], row[2])
+        users.append(_userVK(row[0], row[1], flname=row[2]))
     connection.close()
     return users
 
@@ -511,14 +512,14 @@ def changeSuperUser_TG(login, superUser, path='QA.db'):
     connection.commit()
 
 
-def addUser_VK(id, superUser=0, path='QA.db'):
+def addUser_VK(id, superUser=0, flname=str(id), path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     if superUser is True:
         superUser = 1
     if superUser is False:
         superUser = 0
-    c.execute('''INSERT OR IGNORE INTO usersVK (id, superUser) VALUES (%s,%s)''' % (id, superUser))
+    c.execute('''INSERT OR IGNORE INTO usersVK (id, superUser, name_sur) VALUES (%s,%s,%s)''' % (id, superUser,flname))
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
@@ -553,6 +554,12 @@ def removeUser_TG(login, path='QA.db'):
 
 ########################################################################################################################
 
+def createXMLFileOfQuestions(path = 'QA.db'):
+    questions = getListOfQAfromDB(path)
+    for _qa in questions:
+        # TODO: столбец 1 - _qa.question
+        # TODO: столбец 2 - _qa.answerquestion
+        # TODO: столбец 3 - _qa.null_question
 
 
 
