@@ -434,7 +434,7 @@ class _userVK:
             self.superUser = False
 
     def __repr__(self):
-        return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
+        return 'https://vk.com/id' + (str(self.id) + ' | SuperUser = ' + str(self.superUser))
 
     def getNameByVKid(self):
         #TODO
@@ -554,15 +554,6 @@ def removeUser_TG(login, path='QA.db'):
 ########################################################################################################################
 
 
-# print(model.wv.vocab)
-# print(question_model.wv.vocab)
-##showModel(model)
-
-# test_qa = qa(-1, 'военная кафедра', 'answer2', nullForm= False)
-# model, question_model = addNewQAtoBase(test_qa, model, question_model) # пример добавление новго вопроса в базу. Так же переучиваются текущие модели
-
-# print(model.wv.vocab)
-# print(question_model.wv.vocab)
 
 
 ##################################################################################################################################################################################
