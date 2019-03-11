@@ -255,7 +255,7 @@ class qa:
             self.null_question = question
 
     def __str__(self):
-        return str(self.id) + ' || question=' + self.null_question + ' || answer= ' + self.answer
+        return 'id=' + str(self.id) + ' || question=' + self.null_question + ' || answer= ' + self.answer
 
 
 # при чтении если отсуствует элемент в null_questions сам его создает
@@ -313,6 +313,9 @@ def addNewQAtoBase(_qa, srcModel, targetModel, path='QA.db'):
     srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
     return srcModel, targetModel
+def removeQuestionFromDB(id):
+    #TODO: getListOfQAfromDB()
+
 
 
 ########################################################################################################################
@@ -328,9 +331,6 @@ def countVectorForNullQuestion(question, model):
     arr_q = question.split(' ')
     good_words = []
 
-    # print('getting vector for question:', arr_q)
-    # print(model.wv.vocab)
-    # print(arr_q)
     for word in arr_q:
         if (model.wv.__contains__(word)):
             good_words.append(word)
@@ -423,7 +423,9 @@ class _userVK:
 
     def __repr__(self):
         return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
-
+    def getNameByVKid(self):
+        #TODO
+        return "null yet"
 
 class _userTG:
     onMenu = 0
