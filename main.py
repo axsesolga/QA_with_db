@@ -875,6 +875,15 @@ class VkThread(threading.Thread):
         else:
             return self.vk_keyboard
 
+    def getAdminList(self, vkadminlist):
+        adminList = ''
+        print('=============================')
+        for pers in vkadminlist:
+            adminList += 'ID: ' + str(pers.id) + ' Name: ' + pers.flname + ' Super: ' + str(pers.superUser) + '\n'
+        print(adminList)
+        print('=============================')
+        return adminList
+
     def run(self):
         self.vk_keyboard = json.dumps(self.vk_keyboard, ensure_ascii=False).encode('utf-8')
         self.vk_super_keyboard = json.dumps(self.vk_super_keyboard, ensure_ascii=False).encode('utf-8')
@@ -992,12 +1001,14 @@ class VkThread(threading.Thread):
                                 except:
                                     self.vk_session.method('messages.send',
                                                            {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id для добавление супер администратора',
+                                                            'message': 'Введите корректный id для добавление супер администратора', #TODO: буст с адмена до супера кидает эксепт
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
                             elif vk_admin_list[admin_id].onMenu == 5:
                                 try:
-                                    admin_for_delete = self.getId(int(event.text), vk_admin_list)
+                                    vkk = self.vk_session.get_api()
+                                    res = vkk.users.get(user_ids=event.text)
+                                    admin_for_delete = self.getId(int(res[0]['id']), vk_admin_list)
                                     if not admin_for_delete is -1:
 
                                         removeUser_VK(vk_admin_list[admin_for_delete].id)
@@ -1024,7 +1035,9 @@ class VkThread(threading.Thread):
 
                             elif vk_admin_list[admin_id].onMenu == 6:
                                 try:
-                                    admin_for_clear = self.getId(int(event.text), vk_admin_list)
+                                    vkk = self.vk_session.get_api()
+                                    res = vkk.users.get(user_ids=event.text)
+                                    admin_for_clear = self.getId(int(res[0]['id']), vk_admin_list)
                                     if admin_for_clear != -1:
                                         vk_admin_list[admin_for_clear].superUser = 0
 
@@ -1083,15 +1096,17 @@ class VkThread(threading.Thread):
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 4
                             elif str(event.text) == "Удалить администратора":
+                                admList = self.getAdminList(vk_admin_list)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите снять права администратора',
+                                                        'message': 'Введите id человека, которому хотите снять права администратора\n' + admList,
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 5
                             elif str(event.text) == "Удалить супер права":
+                                admList = self.getAdminList(vk_admin_list)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором',
+                                                        'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором\n' + admList,
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
                             else:
