@@ -313,8 +313,20 @@ def addNewQAtoBase(_qa, srcModel, targetModel, path='QA.db'):
     srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
     return srcModel, targetModel
-def removeQuestionFromDB(id):
-    #TODO: getListOfQAfromDB()
+
+def removeQuestionFromDB(id, path='QA.db'):
+    connection = sqlite3.connect(path)
+    c = connection.cursor()
+    c.execute('''DELETE FROM qa WHERE id = %s''' % (id,))
+    connection.commit()
+    connection.close()
+    # доучиваем модель
+
+    null_q_arr = getNullQuestionsFromDB()
+    srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
+    targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
+    return srcModel, targetModel
+
 
 
 
@@ -423,6 +435,7 @@ class _userVK:
 
     def __repr__(self):
         return (str(self.id) + ' | SuperUser = ' + str(self.superUser))
+
     def getNameByVKid(self):
         #TODO
         return "null yet"
