@@ -426,7 +426,7 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 class _userVK:
     onMenu = 0
 
-    def __init__(self, id, superUser=0):
+    def __init__(self, id, superUser=0, flname='name'):
         self.id = id
         if superUser is 1:
             self.superUser = True
@@ -436,9 +436,9 @@ class _userVK:
     def __repr__(self):
         return 'https://vk.com/id' + (str(self.id) + ' | SuperUser = ' + str(self.superUser))
 
-    def getNameByVKid(self):
+    #def getNameByVKid(self):
         #TODO
-        return "null yet"
+        #return "null yet"
 
 class _userTG:
     onMenu = 0
@@ -951,12 +951,14 @@ class VkThread(threading.Thread):
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             elif vk_admin_list[admin_id].onMenu == 3:
                                 try:
-                                    new_admin = self.getId(int(event.text), vk_admin_list)
+                                    vkk = self.vk_session.get_api()
+                                    res = vkk.users.get(user_ids=event.text)
+                                    new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        new_user = _userVK(int(event.text), 0)
+                                        new_user = _userVK(int(res[0]['id']), 0, res[0]['first_name'] + ' ' + res[0]['last_name'])
                                         vk_admin_list.append(new_user)
 
-                                        addUser_VK(new_user.id, new_user.superUser)
+                                        #addUser_VK(new_user.id, new_user.superUser)
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
@@ -973,13 +975,15 @@ class VkThread(threading.Thread):
                                 except:
                                     self.vk_session.method('messages.send',
                                                            {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id для добавления администратора',
+                                                            'message': 'Введите корректную ссылку для добавления администратора',
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             elif vk_admin_list[admin_id].onMenu == 4:
                                 try:
-                                    new_admin = self.getId(int(event.text), vk_admin_list)
+                                    vkk = self.vk_session.get_api()
+                                    res = vkk.users.get(user_ids=event.text)
+                                    new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        temp_user = _userVK(int(event.text), 1)
+                                        temp_user = _userVK(int(res[0]['id']), 1, res[0]['first_name'] + ' ' + res[0]['last_name'])
                                         vk_admin_list.append(temp_user)
 
                                         sup = 0
@@ -1152,6 +1156,6 @@ tel = TelegramThread()
 vk_admin_list = getUsersFromDB_VK()
 
 vk.start()
-tel.start()
+#tel.start()
 
 
