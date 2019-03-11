@@ -1039,7 +1039,7 @@ class VkThread(threading.Thread):
                                     res = vkk.users.get(user_ids=event.text)
                                     admin_for_clear = self.getId(int(res[0]['id']), vk_admin_list)
                                     if admin_for_clear != -1:
-                                        vk_admin_list[admin_for_clear].superUser = 0
+                                        vk_admin_list[admin_for_clear].superUser = False
 
                                         changeSuperUser_VK(vk_admin_list[admin_for_clear].id,
                                                            vk_admin_list[admin_for_clear].superUser)
