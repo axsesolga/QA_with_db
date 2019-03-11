@@ -519,7 +519,7 @@ def addUser_VK(id, superUser=0, flname=str(id), path='QA.db'):
         superUser = 1
     if superUser is False:
         superUser = 0
-    c.execute('''INSERT OR IGNORE INTO usersVK (id, superUser, name_sur) VALUES (%s,%s,%s)''' % (id, superUser,flname))
+    c.execute('''INSERT OR IGNORE INTO usersVK (id, superUser, name_sur) VALUES (%s,%s,"%s")''' % (id, superUser,flname))
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
@@ -556,10 +556,11 @@ def removeUser_TG(login, path='QA.db'):
 
 def createXMLFileOfQuestions(path = 'QA.db'):
     questions = getListOfQAfromDB(path)
-    for _qa in questions:
+    #for _qa in questions:
         # TODO: столбец 1 - _qa.question
         # TODO: столбец 2 - _qa.answerquestion
         # TODO: столбец 3 - _qa.null_question
+
 
 
 
@@ -965,7 +966,7 @@ class VkThread(threading.Thread):
                                         new_user = _userVK(int(res[0]['id']), 0, res[0]['first_name'] + ' ' + res[0]['last_name'])
                                         vk_admin_list.append(new_user)
 
-                                        #addUser_VK(new_user.id, new_user.superUser)
+                                        addUser_VK(new_user.id, new_user.superUser, new_user.flname)
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
