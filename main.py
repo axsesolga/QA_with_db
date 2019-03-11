@@ -651,7 +651,6 @@ class TelegramThread(threading.Thread):
                                                   reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                     elif telegram_admin_list[admin_id].onMenu == 3:
                         try:
-                            k = vk_api.
                             new_admin = self.getId(int(message.text), telegram_admin_list)
                             if new_admin == -1:
                                 new_user = _userTG(int(message.text), 0)
@@ -785,22 +784,25 @@ class TelegramThread(threading.Thread):
 
                         telegram_admin_list[admin_id].onMenu = 6
                     else:
-                        answers = 'кек1'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+                        answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                            addNewQuestionToModel=False)
                         print(answers)
                         self.bot.send_message(message.chat.id,
-                                              answers,
+                                              answers[0],
                                               reply_markup=self.telegram_super_keyboard)
                 else:
-                    answers = 'кек2'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),addNewQuestionToModel=False)
+                    answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                        addNewQuestionToModel=False)
                     print(answers)
                     self.bot.send_message(message.chat.id,
-                                          answers,
+                                          answers[0],
                                           reply_markup=self.telegram_keyboard)
             else:
-                answers = 'кек3'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(), addNewQuestionToModel=True)
+                answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                     addNewQuestionToModel=True)
                 print(answers)
                 self.bot.send_message(message.chat.id,
-                                      answers,
+                                      answers[0],
                                       reply_markup=self.telegram_null_keyboard)
 
         self.bot.polling(none_stop=True)
@@ -1109,26 +1111,29 @@ class VkThread(threading.Thread):
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
                             else:
-                                answers = 'кек1'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+                                answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                  addNewQuestionToModel=False)
                                 print(answers)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
-                                                        'message': answers,
+                                                        'message': answers[0],
                                                         'random_id': 0, 'keyboard': self.vk_super_keyboard})
                         else:
-                            answers = 'кек2'#getAnswers(str(event.text), model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+                            answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                              addNewQuestionToModel=False)
                             print(answers)
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
-                                                    'message': answers,
+                                                    'message': answers[0],
                                                     'random_id': 0, 'keyboard': self.vk_keyboard})
 
                     else:
-                        answers = 'кек3' #getAnswers(str(event.text), model, question_model, getListOfQAfromDB(), addNewQuestionToModel=False)
+                        answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                         addNewQuestionToModel=False)
                         print(answers)
                         self.vk_session.method('messages.send',
                                                {'user_id': event.user_id,
-                                                'message': answers,
+                                                'message': answers[0],
                                                 'random_id': 0, 'keyboard': self.vk_null_keyboard})
 
 
