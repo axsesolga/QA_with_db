@@ -314,6 +314,7 @@ def addNewQAtoBase(_qa, srcModel, targetModel, path='QA.db'):
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
     return srcModel, targetModel
 
+
 def removeQuestionFromDB(id, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
@@ -326,8 +327,6 @@ def removeQuestionFromDB(id, path='QA.db'):
     srcModel = trainModel('QA.w2v', null_q_arr, restart=True)
     targetModel = getQuestionModel(null_q_arr, srcModel, loadOldModel=False)
     return srcModel, targetModel
-
-
 
 
 ########################################################################################################################
@@ -437,9 +436,10 @@ class _userVK:
     def __repr__(self):
         return 'https://vk.com/id' + (str(self.id) + ' | ' + str(self.flname) + ' | SuperUser ' + str(self.superUser))
 
-    #def getNameByVKid(self):
-        #TODO
-        #return "null yet"
+    # def getNameByVKid(self):
+    # TODO
+    # return "null yet"
+
 
 class _userTG:
     onMenu = 0
@@ -519,7 +519,8 @@ def addUser_VK(id, superUser=0, flname=str(id), path='QA.db'):
         superUser = 1
     if superUser is False:
         superUser = 0
-    c.execute('''INSERT OR IGNORE INTO usersVK (id, superUser, name_sur) VALUES (%s,%s,"%s")''' % (id, superUser,flname))
+    c.execute(
+        '''INSERT OR IGNORE INTO usersVK (id, superUser, name_sur) VALUES (%s,%s,"%s")''' % (id, superUser, flname))
     connection.commit()
     connection.close()
     return getUsersFromDB_VK(path)
@@ -554,14 +555,12 @@ def removeUser_TG(login, path='QA.db'):
 
 ########################################################################################################################
 
-def createXMLFileOfQuestions(path = 'QA.db'):
+def createXMLFileOfQuestions(path='QA.db'):
     questions = getListOfQAfromDB(path)
-    #for _qa in questions:
-        # TODO: столбец 1 - _qa.question
-        # TODO: столбец 2 - _qa.answerquestion
-        # TODO: столбец 3 - _qa.null_question
-
-
+    # for _qa in questions:
+    # TODO: столбец 1 - _qa.question
+    # TODO: столбец 2 - _qa.answerquestion
+    # TODO: столбец 3 - _qa.null_question
 
 
 ##################################################################################################################################################################################
@@ -585,7 +584,6 @@ class TelegramThread(threading.Thread):
     telegram_mini_keyboard = telebot.types.ReplyKeyboardMarkup()
     telegram_null_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
 
-    download_button = telebot.types.KeyboardButton('Загрузить базу данных')
     add_ask_button = telebot.types.KeyboardButton('Добавить вопрос в базу данных')
     add_admin_button = telebot.types.KeyboardButton('Добавить администратора')
     add_super_button = telebot.types.KeyboardButton('Добавить супер права')
@@ -608,21 +606,21 @@ class TelegramThread(threading.Thread):
 
     def run(self):
 
-        self.telegram_keyboard.add(self.download_button, self.add_ask_button, self.help_button)
-        self.telegram_super_keyboard.add(self.download_button, self.add_ask_button,
+        self.telegram_keyboard.add(self.add_ask_button, self.help_button)
+        self.telegram_super_keyboard.add(self.add_ask_button,
                                          self.add_admin_button,
                                          self.add_super_button, self.delete_admin_button, self.delete_super_button,
                                          self.help_button)
-        self.telegram_mini_keyboard.add(self.help_button, self.cancel_button)
+        self.telegram_mini_keyboard.add(self.cancel_button)
 
         telegram_admin_list = getUsersFromDB_TG()
-
 
         null_q_arr = getNullQuestionsFromDB()
         model = trainModel('QA.w2v', null_q_arr, restart=True)
         question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
 
         print('TG ready')
+
         @self.bot.message_handler(content_types=["text"])
         def repeat_all_messages(message):
             admin_id = self.getId(message.chat.username, telegram_admin_list)
@@ -636,16 +634,6 @@ class TelegramThread(threading.Thread):
                         self.bot.send_message(message.chat.id, 'Отмененно',
                                               reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                         telegram_admin_list[admin_id].onMenu = 0
-
-                    elif message.text == "Помощь":
-                        if telegram_admin_list[admin_id].superUser:
-                            self.bot.send_message(message.chat.id,
-                                                  'супер админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
-                                                  reply_markup=self.telegram_mini_keyboard)
-                        else:
-                            self.bot.send_message(message.chat.id,
-                                                  'обычный админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
-                                                  reply_markup=self.telegram_mini_keyboard)
 
                     elif telegram_admin_list[admin_id].onMenu == 2:
                         text_arr = message.text.split(':');
@@ -754,10 +742,7 @@ class TelegramThread(threading.Thread):
                             self.bot.send_message(message.chat.id,
                                                   'Введите корректный id',
                                                   reply_markup=self.telegram_mini_keyboard)
-                elif message.text == "Загрузить базу данных":
-                    self.bot.send_message(message.chat.id,
-                                          'baza',
-                                          reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
+
                 elif message.text == "Добавить вопрос в базу данных":
                     self.bot.send_message(message.chat.id,
                                           'Введите вопрос в формате Вопрос : Ответ',
@@ -799,14 +784,14 @@ class TelegramThread(threading.Thread):
                         telegram_admin_list[admin_id].onMenu = 6
                     else:
                         answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                            addNewQuestionToModel=False)
+                                             addNewQuestionToModel=False)
                         print(answers)
                         self.bot.send_message(message.chat.id,
                                               answers[0],
                                               reply_markup=self.telegram_super_keyboard)
                 else:
                     answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                        addNewQuestionToModel=False)
+                                         addNewQuestionToModel=False)
                     print(answers)
                     self.bot.send_message(message.chat.id,
                                           answers[0],
@@ -846,7 +831,6 @@ class VkThread(threading.Thread):
     vk_keyboard = {
         "one_time": False,
         "buttons": [
-            [get_vk_button(label="Загрузить базу данных", color="primary")],
             [get_vk_button(label="Добавить вопрос в базу данных", color="primary")],  # menu id 2
             [get_vk_button(label="Помощь", color="primary")]
 
@@ -856,7 +840,6 @@ class VkThread(threading.Thread):
     vk_super_keyboard = {
         "one_time": False,
         "buttons": [
-            [get_vk_button(label="Загрузить базу данных", color="primary")],
             [get_vk_button(label="Добавить вопрос в базу данных", color="primary")],  # menu id 2
             [get_vk_button(label="Добавить администратора", color="primary")],  # menu id 3
             [get_vk_button(label="Добавить супер права", color="primary")],  # menu id 4
@@ -870,9 +853,7 @@ class VkThread(threading.Thread):
     vk_mini_keyboard = {
         "one_time": False,
         "buttons": [
-            [get_vk_button(label="Отменить", color="primary")],
-            [get_vk_button(label="Помощь", color="primary")]
-
+            [get_vk_button(label="Отменить", color="primary")]
         ]
     }
 
@@ -925,18 +906,6 @@ class VkThread(threading.Thread):
                                                         'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
                                 vk_admin_list[admin_id].onMenu = 0
 
-                            elif str(event.text) == "Помощь":
-                                if vk_admin_list[admin_id].superUser:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'супер админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                else:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'обычный админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
                             elif vk_admin_list[admin_id].onMenu == 2:
                                 text_arr = str(event.text).split(':');
                                 if len(text_arr) == 2:
@@ -963,7 +932,8 @@ class VkThread(threading.Thread):
                                     res = vkk.users.get(user_ids=event.text)
                                     new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        new_user = _userVK(int(res[0]['id']), 0, res[0]['first_name'] + ' ' + res[0]['last_name'])
+                                        new_user = _userVK(int(res[0]['id']), 0,
+                                                           res[0]['first_name'] + ' ' + res[0]['last_name'])
                                         vk_admin_list.append(new_user)
 
                                         addUser_VK(new_user.id, new_user.superUser, new_user.flname)
@@ -991,7 +961,8 @@ class VkThread(threading.Thread):
                                     res = vkk.users.get(user_ids=event.text)
                                     new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        temp_user = _userVK(int(res[0]['id']), 1, res[0]['first_name'] + ' ' + res[0]['last_name'])
+                                        temp_user = _userVK(int(res[0]['id']), 1,
+                                                            res[0]['first_name'] + ' ' + res[0]['last_name'])
                                         vk_admin_list.append(temp_user)
 
                                         sup = 0
@@ -1076,12 +1047,7 @@ class VkThread(threading.Thread):
                                                            {'user_id': event.user_id,
                                                             'message': 'Введите корректный id',
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                        elif str(event.text) == "Загрузить базу данных":
-                            self.vk_session.method('messages.send',
-                                                   {'user_id': event.user_id,
-                                                    'message': 'baza',
-                                                    'random_id': 0, 'keyboard': self.return_keyboard(
-                                                       vk_admin_list[admin_id])})
+
                         elif str(event.text) == "Добавить вопрос в базу данных":
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
@@ -1129,16 +1095,16 @@ class VkThread(threading.Thread):
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
                             else:
-                                answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                                  addNewQuestionToModel=False)
+                                answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                                     addNewQuestionToModel=False)
                                 print(answers)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
                                                         'message': answers[0],
                                                         'random_id': 0, 'keyboard': self.vk_super_keyboard})
                         else:
-                            answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                              addNewQuestionToModel=False)
+                            answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                                 addNewQuestionToModel=False)
                             print(answers)
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
@@ -1146,8 +1112,8 @@ class VkThread(threading.Thread):
                                                     'random_id': 0, 'keyboard': self.vk_keyboard})
 
                     else:
-                        answers =  getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
-                         addNewQuestionToModel=False)
+                        answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                                             addNewQuestionToModel=False)
                         print(answers)
                         self.vk_session.method('messages.send',
                                                {'user_id': event.user_id,
@@ -1164,6 +1130,4 @@ tel = TelegramThread()
 vk_admin_list = getUsersFromDB_VK()
 
 vk.start()
-#tel.start()
-
-
+# tel.start()
