@@ -569,7 +569,7 @@ def removeUser_TG(login, path='QA.db'):
 
 ########################################################################################################################
 
-def createXMLFileOfQuestions(path='QA.db'):
+def createXLSFileOfQuestions(path='QA.db'):
     questions = getListOfQAfromDB(path)
     # for _qa in questions:
     # TODO: столбец 1 - _qa.question
@@ -667,9 +667,9 @@ class TelegramThread(threading.Thread):
                                                   reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                     elif telegram_admin_list[admin_id].onMenu == 3:
                         try:
-                            new_admin = self.getId(int(message.text), telegram_admin_list)
+                            new_admin = self.getId(message.text, telegram_admin_list)
                             if new_admin == -1:
-                                new_user = _userTG(int(message.text), 0)
+                                new_user = _userTG(message.text, 0)
                                 telegram_admin_list.append(new_user)
 
                                 addUser_TG(new_user.login, new_user.superUser)
@@ -688,29 +688,26 @@ class TelegramThread(threading.Thread):
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 4:
                         try:
-                            new_admin = self.getId(int(message.text), telegram_admin_list)
+                            new_admin = self.getId(message.text, telegram_admin_list)
                             if new_admin == -1:
-                                temp_user = _userTG(int(message.text), 1)
+                                temp_user = _userTG(message.text, 1)
                                 telegram_admin_list.append(temp_user)
 
-                                sup = 0
-                                if temp_user.superUser:
-                                    sup = 1
-                                addUser_TG(temp_user.login, sup)
+                                addUser_TG(temp_user.login, temp_user.superUser)
 
                                 telegram_admin_list[admin_id].onMenu = 0
                                 self.bot.send_message(message.chat.id,
-                                                      'Супер администратор добавлен',
+                                                      'Супер администратор создан',
                                                       reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                             else:
 
-                                changeSuperUser_TG(telegram_admin_list[new_admin].login,
-                                                   telegram_admin_list[new_admin].superUser)
                                 telegram_admin_list[admin_id].onMenu = 0
                                 telegram_admin_list[new_admin].superUser = True
+                                changeSuperUser_TG(telegram_admin_list[new_admin].login,
+                                                   telegram_admin_list[new_admin].superUser)
 
                                 self.bot.send_message(message.chat.id,
-                                                      'Супер администратор добавлен',
+                                                      'Супер права добавлены',
                                                       reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                         except:
                             self.bot.send_message(message.chat.id,
@@ -718,7 +715,7 @@ class TelegramThread(threading.Thread):
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 5:
                         try:
-                            admin_for_delete = self.getId(int(message.text), telegram_admin_list)
+                            admin_for_delete = self.getId(message.text, telegram_admin_list)
                             if not admin_for_delete is -1:
                                 removeUser_TG(telegram_admin_list[admin_for_delete].login)
                                 telegram_admin_list.remove(telegram_admin_list[admin_for_delete])
@@ -737,7 +734,7 @@ class TelegramThread(threading.Thread):
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 6:
                         try:
-                            admin_for_clear = self.getId(int(message.text), telegram_admin_list)
+                            admin_for_clear = self.getId(message.text, telegram_admin_list)
                             if admin_for_clear != -1:
                                 telegram_admin_list[admin_for_clear].superUser = 0
 
@@ -746,7 +743,7 @@ class TelegramThread(threading.Thread):
 
                                 telegram_admin_list[admin_id].onMenu = 0
                                 self.bot.send_message(message.chat.id,
-                                                      'Супер пользователь добавлен',
+                                                      'Супер права удалены',
                                                       reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                             else:
                                 self.bot.send_message(message.chat.id,
@@ -754,7 +751,7 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.telegram_mini_keyboard)
                         except:
                             self.bot.send_message(message.chat.id,
-                                                  'Введите корректный login для добавления супер пользователя',
+                                                  'Введите корректный login для удаления супер прав пользователя',
                                                   reply_markup=self.telegram_mini_keyboard)
 
                 elif message.text == "Добавить вопрос в базу данных":
