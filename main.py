@@ -583,6 +583,34 @@ def createXLSFileOfQuestions(path='QA.db'):
     workbook.close()
 
 
+def createXLSFileOfUsers_TG(path='QA.db'):
+    users = getUsersFromDB_TG(path)
+    file_name = 'users_TG.xlsx'
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet(name='Main')
+    row = 0
+    for _user in users:
+        worksheet.write_string(row, 0, _user.login)
+        worksheet.write_string(row, 1, _user.superUser)
+        row += 1
+    workbook.close()
+    return file_name
+
+
+def createXLSFileOfUsers_VK(path='QA.db'):
+    users = getUsersFromDB_VK(path)
+    file_name = 'users_VK.xlsx'
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet(name='Main')
+    row = 0
+    for _user in users:
+        worksheet.write_string(row, 0, _user.id)
+        worksheet.write_string(row, 1, _user.superUser)
+        worksheet.write_string(row, 2, _user.flname)
+        row += 1
+    workbook.close()
+    return file_name
+
 
 ##################################################################################################################################################################################
 
