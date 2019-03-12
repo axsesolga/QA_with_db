@@ -889,7 +889,9 @@ class VkThread(threading.Thread):
     vk_keyboard = {
         "one_time": False,
         "buttons": [
+            [get_vk_button(label="Загрузить список вопросов", color="primary")],
             [get_vk_button(label="Добавить вопрос в базу данных", color="primary")],  # menu id 2
+            [get_vk_button(label="Удалить вопрос из базы данных", color="primary")], # menu id 7
             [get_vk_button(label="Помощь", color="primary")]
 
         ]
@@ -898,7 +900,10 @@ class VkThread(threading.Thread):
     vk_super_keyboard = {
         "one_time": False,
         "buttons": [
+            [get_vk_button(label="Загрузить список админов", color="primary")],
+            [get_vk_button(label="Загрузить список вопросов", color="primary")],
             [get_vk_button(label="Добавить вопрос в базу данных", color="primary")],  # menu id 2
+            [get_vk_button(label="Удалить вопрос из базы данных", color="primary")], # menu id 7
             [get_vk_button(label="Добавить администратора", color="primary")],  # menu id 3
             [get_vk_button(label="Добавить супер права", color="primary")],  # menu id 4
             [get_vk_button(label="Удалить администратора", color="primary")],  # menu id 5
@@ -1117,12 +1122,28 @@ class VkThread(threading.Thread):
                                                             'message': 'Введите корректный id',
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
+                            elif vk_admin_list[admin_id].onMenu == 7:
+                                #TODO удаление вопроса + message и обработку ошибок
+                                self.vk_session.method('messages.send',
+                                                       {'user_id': event.user_id,
+                                                        'message': 'Зашел в удаление вопросов',
+                                                        'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                   vk_admin_list[admin_id])})
+
                         elif str(event.text) == "Добавить вопрос в базу данных":
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
                                                     'message': 'Введите вопрос в формате Вопрос : Ответ',
                                                     'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             vk_admin_list[admin_id].onMenu = 2
+                        elif str(event.text) == "Удалить вопрос из базы данных":
+                            admList = self.getAdminList(vk_admin_list)
+                            self.vk_session.method('messages.send',
+                                                   {'user_id': event.user_id,
+                                                    'message': 'Введите id вопроса, который хотите удалить',
+                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                            vk_admin_list[admin_id].onMenu = 7
                         elif str(event.text) == "Помощь":
                             if vk_admin_list[admin_id].superUser:
                                 self.vk_session.method('messages.send',
@@ -1164,17 +1185,27 @@ class VkThread(threading.Thread):
                                                         'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором\n' + admList,
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
-                            elif str(event.text) == '/usersVK':
+                            elif str(event.text) == 'Загрузить список админов':
                                 _file = createXLSFileOfUsers_VK()
                                 #TODO: отправить юзеру файл с именем _file
+                                self.vk_session.method('messages.send',
+                                                       {'user_id': event.user_id,
+                                                        'message': 'файл',
+                                                        'random_id': 0, 'keyboard': self.return_keyboard(
+                                                           vk_admin_list[admin_id])})
 
                             elif str(event.text) == '/usersTG':
                                 _file = createXLSFileOfUsers_TG()
                                 #TODO: отправить юзеру файл с именем _file
 
-                            elif str(event.text) == '/questions':
+                            elif str(event.text) == 'Загрузить список вопросов':
                                 _file = createXLSFileOfQuestions()
                                 #TODO: отправить юзеру файл с именем _file
+                                self.vk_session.method('messages.send',
+                                                       {'user_id': event.user_id,
+                                                        'message': 'файл',
+                                                        'random_id': 0, 'keyboard': self.return_keyboard(
+                                                           vk_admin_list[admin_id])})
 
                             else:
                                 answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
@@ -1212,7 +1243,7 @@ tel = TelegramThread()
 vk_admin_list = getUsersFromDB_VK()
 
 vk.start()
-tel.start()
+#tel.start()
 createXLSFileOfQuestions()
 createXLSFileOfUsers_TG()
 createXLSFileOfUsers_VK()
