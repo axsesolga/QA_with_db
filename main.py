@@ -509,12 +509,15 @@ def changeSuperUser_VK(id, superUser, path='QA.db'):
     print('''UPDATE OR IGNORE usersVK SET superUser = %s WHERE id = %s''' % (superUser, id))
     c.execute('''UPDATE OR IGNORE usersVK SET superUser = %s WHERE id = %s''' % (superUser, id))
     connection.commit()
-
-
 def changeSuperUser_TG(login, superUser, path='QA.db'):
+    if superUser is True:
+        superUser = 1
+    if superUser is False:
+        superUser = 0
+
     connection = sqlite3.connect(path)
     c = connection.cursor()
-    c.execute('''UPDATE OR IGNORE usersTG SET superUser = %s WHERE login = %s''' % (superUser, login))
+    c.execute('''UPDATE OR IGNORE usersTG SET superUser = %s WHERE login = "%s"''' % (superUser, login))
     connection.commit()
 
 
@@ -533,9 +536,14 @@ def addUser_VK(id, flname, superUser=0, path='QA.db'):
 
 
 def addUser_TG(login, superUser=0, path='QA.db'):
+    if superUser is True:
+        superUser = 1
+    if superUser is False:
+        superUser = 0
+
     connection = sqlite3.connect(path)
     c = connection.cursor()
-    c.execute('''INSERT OR IGNORE INTO usersTG (login, superUser) VALUES (%s,%s)''' % ('"' + login + '"', superUser))
+    c.execute('''INSERT OR IGNORE INTO usersTG (login, superUser) VALUES ("%s",%s)''' % (login, superUser))
     connection.commit()
     connection.close()
     return getUsersFromDB_TG(path)
@@ -622,8 +630,8 @@ class TelegramThread(threading.Thread):
         telegram_admin_list = getUsersFromDB_TG()
 
         null_q_arr = getNullQuestionsFromDB()
-        model = trainModel('QA.w2v', null_q_arr, restart=True)
-        question_model = getQuestionModel(null_q_arr, model, loadOldModel=False)
+        modelTG = trainModel('QA.w2v', null_q_arr, restart=True)
+        question_modelTG = getQuestionModel(null_q_arr, modelTG, loadOldModel=False)
 
         print('TG ready')
 
@@ -645,8 +653,8 @@ class TelegramThread(threading.Thread):
                         text_arr = message.text.split(':');
                         if len(text_arr) == 2:
                             new_qa = qa(0, text_arr[0], text_arr[1], nullForm=False)
-                            print(list(question_model.wv.vocab))
-                            model, question_model = addNewQAtoBase(new_qa, model, question_model)
+                            print(list(question_modelTG.wv.vocab))
+                            model, question_model = addNewQAtoBase(new_qa, modelTG, question_modelTG)
                             print(list(question_model.wv.vocab))
 
                             telegram_admin_list[admin_id].onMenu = 0
@@ -664,7 +672,7 @@ class TelegramThread(threading.Thread):
                                 new_user = _userTG(int(message.text), 0)
                                 telegram_admin_list.append(new_user)
 
-                                addUser_TG(new_user.id, new_user.superUser)
+                                addUser_TG(new_user.login, new_user.superUser)
 
                                 telegram_admin_list[admin_id].onMenu = 0
                                 self.bot.send_message(message.chat.id,
@@ -676,7 +684,7 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.telegram_mini_keyboard)
                         except:
                             self.bot.send_message(message.chat.id,
-                                                  'Введите корректный id',
+                                                  'Введите корректный login для для добавления администратора',
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 4:
                         try:
@@ -688,7 +696,7 @@ class TelegramThread(threading.Thread):
                                 sup = 0
                                 if temp_user.superUser:
                                     sup = 1
-                                addUser_TG(temp_user.id, sup)
+                                addUser_TG(temp_user.login, sup)
 
                                 telegram_admin_list[admin_id].onMenu = 0
                                 self.bot.send_message(message.chat.id,
@@ -696,8 +704,8 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                             else:
 
-                                changeSuperUser_TG(telegram_admin_list[new_admin].id,
-                                                   telegram_admin_list[admin_id].superUser)
+                                changeSuperUser_TG(telegram_admin_list[new_admin].login,
+                                                   telegram_admin_list[new_admin].superUser)
                                 telegram_admin_list[admin_id].onMenu = 0
                                 telegram_admin_list[new_admin].superUser = True
 
@@ -706,13 +714,13 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                         except:
                             self.bot.send_message(message.chat.id,
-                                                  'Введите корректный id',
+                                                  'Введите корректный login для добавления супер прав',
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 5:
                         try:
                             admin_for_delete = self.getId(int(message.text), telegram_admin_list)
                             if not admin_for_delete is -1:
-                                removeUser_TG(telegram_admin_list[admin_for_delete].id)
+                                removeUser_TG(telegram_admin_list[admin_for_delete].login)
                                 telegram_admin_list.remove(telegram_admin_list[admin_for_delete])
 
                                 telegram_admin_list[admin_id].onMenu = 0
@@ -725,7 +733,7 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.telegram_mini_keyboard)
                         except:
                             self.bot.send_message(message.chat.id,
-                                                  'Введите корректный id',
+                                                  'Введите корректный login для удаления администратора',
                                                   reply_markup=self.telegram_mini_keyboard)
                     elif telegram_admin_list[admin_id].onMenu == 6:
                         try:
@@ -733,7 +741,7 @@ class TelegramThread(threading.Thread):
                             if admin_for_clear != -1:
                                 telegram_admin_list[admin_for_clear].superUser = 0
 
-                                changeSuperUser_TG(telegram_admin_list[admin_for_clear].id,
+                                changeSuperUser_TG(telegram_admin_list[admin_for_clear].login,
                                                    telegram_admin_list[admin_for_clear].superUser)
 
                                 telegram_admin_list[admin_id].onMenu = 0
@@ -746,7 +754,7 @@ class TelegramThread(threading.Thread):
                                                       reply_markup=self.telegram_mini_keyboard)
                         except:
                             self.bot.send_message(message.chat.id,
-                                                  'Введите корректный id',
+                                                  'Введите корректный login для добавления супер пользователя',
                                                   reply_markup=self.telegram_mini_keyboard)
 
                 elif message.text == "Добавить вопрос в базу данных":
@@ -789,21 +797,21 @@ class TelegramThread(threading.Thread):
 
                         telegram_admin_list[admin_id].onMenu = 6
                     else:
-                        answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                        answers = getAnswers(str(message.text), modelTG, question_modelTG, getListOfQAfromDB(),
                                              addNewQuestionToModel=False)
                         print(answers)
                         self.bot.send_message(message.chat.id,
                                               answers[0],
                                               reply_markup=self.telegram_super_keyboard)
                 else:
-                    answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                    answers = getAnswers(str(message.text), modelTG, question_modelTG, getListOfQAfromDB(),
                                          addNewQuestionToModel=False)
                     print(answers)
                     self.bot.send_message(message.chat.id,
                                           answers[0],
                                           reply_markup=self.telegram_keyboard)
             else:
-                answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
+                answers = getAnswers(str(message.text), modelTG, question_modelTG, getListOfQAfromDB(),
                                      addNewQuestionToModel=True)
                 print(answers)
                 self.bot.send_message(message.chat.id,
@@ -1148,5 +1156,5 @@ tel = TelegramThread()
 
 vk_admin_list = getUsersFromDB_VK()
 
-vk.start()
-# tel.start()
+#vk.start()
+tel.start()
