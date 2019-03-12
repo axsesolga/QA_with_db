@@ -1144,7 +1144,6 @@ class VkThread(threading.Thread):
                                                         'message': 'Введите id человека, которому хотите дать права администратора',
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 3
-
                             elif str(event.text) == "Добавить супер права":
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
@@ -1165,6 +1164,18 @@ class VkThread(threading.Thread):
                                                         'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором\n' + admList,
                                                         'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                                 vk_admin_list[admin_id].onMenu = 6
+                            elif str(event.text) == '/usersVK':
+                                _file = createXLSFileOfUsers_VK()
+                                #TODO: отправить юзеру файл с именем _file
+
+                            elif str(event.text) == '/usersTG':
+                                _file = createXLSFileOfUsers_TG()
+                                #TODO: отправить юзеру файл с именем _file
+
+                            elif str(event.text) == '/questions':
+                                _file = createXLSFileOfQuestions()
+                                #TODO: отправить юзеру файл с именем _file
+
                             else:
                                 answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
                                                      addNewQuestionToModel=False)
@@ -1200,8 +1211,8 @@ tel = TelegramThread()
 
 vk_admin_list = getUsersFromDB_VK()
 
-#vk.start()
-#tel.start()
+vk.start()
+tel.start()
 createXLSFileOfQuestions()
 createXLSFileOfUsers_TG()
 createXLSFileOfUsers_VK()
