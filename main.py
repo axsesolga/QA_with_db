@@ -568,13 +568,20 @@ def removeUser_TG(login, path='QA.db'):
 
 
 ########################################################################################################################
+import xlsxwriter
 
 def createXLSFileOfQuestions(path='QA.db'):
     questions = getListOfQAfromDB(path)
-    # for _qa in questions:
-    # TODO: столбец 1 - _qa.question
-    # TODO: столбец 2 - _qa.answerquestion
-    # TODO: столбец 3 - _qa.null_question
+    workbook = xlsxwriter.Workbook('QA.xlsx')
+    worksheet = workbook.add_worksheet(name='Main')
+    row = 0
+    for _qa in questions:
+        worksheet.write_string(row, 0, _qa.question)
+        worksheet.write_string(row, 1, _qa.answer)
+        worksheet.write_string(row, 2, _qa.null_question)
+        row += 1
+    workbook.close()
+
 
 
 ##################################################################################################################################################################################
