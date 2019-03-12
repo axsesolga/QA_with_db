@@ -425,7 +425,7 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 class _userVK:
     onMenu = 0
 
-    def __init__(self, id, superUser=0, flname=str(id)):
+    def __init__(self, id, flname, superUser=0):
         self.id = id
         self.flname = flname
         if superUser is 1:
@@ -472,7 +472,7 @@ def getUsersFromDB_VK(path='QA.db'):
         # qa(id, question, answer, nullQuestionGiven)
         # print(row)
         print(row[0], row[1], row[2])
-        users.append(_userVK(row[0], row[1], flname=row[2]))
+        users.append(_userVK(id=row[0], superUser=row[1], flname=row[2]))
     connection.close()
     return users
 
@@ -499,8 +499,14 @@ def getUsersFromDB_TG(path='QA.db'):
 
 
 def changeSuperUser_VK(id, superUser, path='QA.db'):
+    if superUser is True:
+        superUser = 1
+    if superUser is False:
+        superUser = 0
+
     connection = sqlite3.connect(path)
     c = connection.cursor()
+    print('''UPDATE OR IGNORE usersVK SET superUser = %s WHERE id = %s''' % (superUser, id))
     c.execute('''UPDATE OR IGNORE usersVK SET superUser = %s WHERE id = %s''' % (superUser, id))
     connection.commit()
 
@@ -512,7 +518,7 @@ def changeSuperUser_TG(login, superUser, path='QA.db'):
     connection.commit()
 
 
-def addUser_VK(id, superUser=0, flname=str(id), path='QA.db'):
+def addUser_VK(id, flname, superUser=0, path='QA.db'):
     connection = sqlite3.connect(path)
     c = connection.cursor()
     if superUser is True:
@@ -879,7 +885,7 @@ class VkThread(threading.Thread):
         adminList = ''
         print('=============================')
         for pers in vkadminlist:
-            adminList += 'ID: ' + str(pers.id) + ' Name: ' + pers.flname + ' Super: ' + str(pers.superUser) + '\n\n'
+            adminList += 'ID: ' + str(pers.id) + '\t| Name: ' + pers.flname + '\t| Super: ' + str(pers.superUser) + '\n\n'
         print(adminList)
         print('=============================')
         return adminList
@@ -941,11 +947,10 @@ class VkThread(threading.Thread):
                                     res = vkk.users.get(user_ids=event.text)
                                     new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        new_user = _userVK(int(res[0]['id']), 0,
-                                                           res[0]['first_name'] + ' ' + res[0]['last_name'])
+                                        new_user = _userVK(id= int(res[0]['id']), superUser=0, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
                                         vk_admin_list.append(new_user)
 
-                                        addUser_VK(new_user.id, new_user.superUser, new_user.flname)
+                                        addUser_VK(id=new_user.id, superUser=new_user.superUser, flname=new_user.flname)
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
@@ -970,14 +975,13 @@ class VkThread(threading.Thread):
                                     res = vkk.users.get(user_ids=event.text)
                                     new_admin = self.getId(int(res[0]['id']), vk_admin_list)
                                     if new_admin == -1:
-                                        temp_user = _userVK(int(res[0]['id']), 1,
-                                                            res[0]['first_name'] + ' ' + res[0]['last_name'])
+                                        temp_user = _userVK(id=int(res[0]['id']), superUser=1, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
                                         vk_admin_list.append(temp_user)
 
                                         sup = 0
                                         if temp_user.superUser:
                                             sup = 1
-                                        addUser_VK(temp_user.id, sup)
+                                        addUser_VK(id=temp_user.id, superUser=sup, flname=temp_user.flname)
 
                                         vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
