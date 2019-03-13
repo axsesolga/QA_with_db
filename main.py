@@ -1122,15 +1122,18 @@ class VkThread(threading.Thread):
                                                             'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
                             elif vk_admin_list[admin_id].onMenu == 7:
-                                #TODO удаление вопроса + message и обработку ошибок
-                                #TODO удаление идет по ID который можно увидеть в таблице
-
-                                removeQuestionFromDB(id)
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Зашел в удаление вопросов',
-                                                        'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
+                                try:
+                                    removeQuestionFromDB(int(event.text))
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Вопрос удален',
+                                                            'random_id': 0, 'keyboard': self.return_keyboard(
+                                                               vk_admin_list[admin_id])})
+                                except:
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите корректный id',
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
 
                         elif str(event.text) == "Добавить вопрос в базу данных":
                             self.vk_session.method('messages.send',
@@ -1139,7 +1142,6 @@ class VkThread(threading.Thread):
                                                     'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             vk_admin_list[admin_id].onMenu = 2
                         elif str(event.text) == "Удалить вопрос из базы данных":
-                            admList = self.getAdminList(vk_admin_list)
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
                                                     'message': 'Введите id вопроса, который хотите удалить',
