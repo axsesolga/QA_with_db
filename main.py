@@ -436,9 +436,6 @@ class _userVK:
     def __repr__(self):
         return 'https://vk.com/id' + (str(self.id) + ' | ' + str(self.flname) + ' | SuperUser ' + str(self.superUser))
 
-    # def getNameByVKid(self):
-    # TODO
-    # return "null yet"
 
 
 class _userTG:
@@ -577,15 +574,17 @@ def createXLSFileOfQuestions(path='QA.db'):
     worksheet = workbook.add_worksheet(name='Main')
     row = 0
 
-    worksheet.write_string(row, 0, "question\t\t")
-    worksheet.write_string(row, 1, "answer\t\t")
-    worksheet.write_string(row, 2, "zero form question\t\t")
+    worksheet.write_string(row, 0, "ID\t\t")
+    worksheet.write_string(row, 1, "question\t\t")
+    worksheet.write_string(row, 2, "answer\t\t")
+    worksheet.write_string(row, 3, "zero form question\t\t")
     row += 1
 
     for _qa in questions:
-        worksheet.write_string(row, 0, _qa.question)
-        worksheet.write_string(row, 1, _qa.answer)
-        worksheet.write_string(row, 2, _qa.null_question)
+        worksheet.write_number(row, 0, _qa.id)
+        worksheet.write_string(row, 1, _qa.question)
+        worksheet.write_string(row, 2, _qa.answer)
+        worksheet.write_string(row, 3, _qa.null_question)
         row += 1
     workbook.close()
     return file_name
@@ -1124,6 +1123,9 @@ class VkThread(threading.Thread):
 
                             elif vk_admin_list[admin_id].onMenu == 7:
                                 #TODO удаление вопроса + message и обработку ошибок
+                                #TODO удаление идет по ID который можно увидеть в таблице
+
+                                removeQuestionFromDB(id)
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
                                                         'message': 'Зашел в удаление вопросов',
@@ -1241,9 +1243,7 @@ vk = VkThread()
 tel = TelegramThread()
 
 vk_admin_list = getUsersFromDB_VK()
-
-vk.start()
-#tel.start()
 createXLSFileOfQuestions()
-createXLSFileOfUsers_TG()
-createXLSFileOfUsers_VK()
+
+#vk.start()
+#tel.start()
