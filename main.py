@@ -1125,7 +1125,7 @@ class VkThread(threading.Thread):
                                 #TODO удаление вопроса + message и обработку ошибок
                                 #TODO удаление идет по ID который можно увидеть в таблице
 
-                                removeQuestionFromDB(id)
+                                model, question_model = removeQuestionFromDB(id) # это удаление вопроса из базы и из моделей
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
                                                         'message': 'Зашел в удаление вопросов',
