@@ -946,6 +946,21 @@ class VkThread(threading.Thread):
         print('=============================')
         return adminList
 
+    def sendFile(self, receiver, dfile, name):
+        import requests
+        import json
+        vkapi = self.vk_session.get_api()
+        upload_url = vkapi.docs.getMessagesUploadServer(peer_id=receiver)['upload_url']
+        response = requests.post(upload_url, files={'file': open(dfile, 'rb')})
+        result = json.loads(response.text)
+        file = result['file']
+        json = vkapi.docs.save(file=file, title=name, tags=[])
+        owner_id = json['doc']['owner_id']
+        doc_id = json['doc']['id']
+        attach = 'doc' + str(owner_id) + '_' + str(doc_id)
+        messages = vkapi.messages.send(user_id=receiver, attachment=attach, random_id='0')
+
+
     def run(self):
         self.vk_keyboard = json.dumps(self.vk_keyboard, ensure_ascii=False).encode('utf-8')
         self.vk_super_keyboard = json.dumps(self.vk_super_keyboard, ensure_ascii=False).encode('utf-8')
@@ -1191,25 +1206,15 @@ class VkThread(threading.Thread):
                                 vk_admin_list[admin_id].onMenu = 6
                             elif str(event.text) == 'Загрузить список админов':
                                 _file = createXLSFileOfUsers_VK()
-                                #TODO: отправить юзеру файл с именем _file
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'файл',
-                                                        'random_id': 0, 'keyboard': self.return_keyboard(
-                                                           vk_admin_list[admin_id])})
+                                self.sendFile(event.user_id, _file, 'Список Админов')
 
                             elif str(event.text) == '/usersTG':
                                 _file = createXLSFileOfUsers_TG()
-                                #TODO: отправить юзеру файл с именем _file
+                                self.sendFile(event.user_id, _file, 'Список Админов')
 
                             elif str(event.text) == 'Загрузить список вопросов':
                                 _file = createXLSFileOfQuestions()
-                                #TODO: отправить юзеру файл с именем _file
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'файл',
-                                                        'random_id': 0, 'keyboard': self.return_keyboard(
-                                                           vk_admin_list[admin_id])})
+                                self.sendFile(event.user_id, _file, 'Список Вопросов')
 
                             else:
                                 answers = getAnswers(str(event.text), model, question_model, getListOfQAfromDB(),
@@ -1247,5 +1252,5 @@ tel = TelegramThread()
 vk_admin_list = getUsersFromDB_VK()
 createXLSFileOfQuestions()
 
-#vk.start()
+vk.start()
 #tel.start()
