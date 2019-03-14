@@ -76,6 +76,7 @@ import json
 import threading
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
+import time
 
 import bot_logic
 import DB_methods
@@ -190,234 +191,243 @@ class VkThread(threading.Thread):
         question_model = bot_logic.getQuestionModel(null_q_arr, model, loadOldModel=False)
         print('VK ready')
         while True:
-            for event in self.longpoll.listen():
-                if event.type == VkEventType.MESSAGE_NEW and event.from_user and not event.from_me:
-                    admin_id = self.getId(event.user_id, vk_admin_list)
-                    if admin_id != -1:
-                        if vk_admin_list[admin_id].onMenu != 0:
-                            if str(event.text) == "Отменить":
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Отмененно',
-                                                        'random_id': 0,
-                                                        'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
-                                vk_admin_list[admin_id].onMenu = 0
-
-                            elif vk_admin_list[admin_id].onMenu == 2:
-                                text_arr = str(event.text).split('___')
-                                if len(text_arr) == 2:
-                                    new_qa = DB_methods.qa(0, text_arr[0], text_arr[1], nullForm=False)
-                                    print(list(question_model.wv.vocab))
-                                    model, question_model = DB_methods.addNewQAtoBase(new_qa)
-                                    print(list(question_model.wv.vocab))
-
-                                    vk_admin_list[admin_id].onMenu = 0
+            try:
+                for event in self.longpoll.listen():
+                    if event.type == VkEventType.MESSAGE_NEW and event.from_user and not event.from_me:
+                        admin_id = self.getId(event.user_id, vk_admin_list)
+                        if admin_id != -1:
+                            if vk_admin_list[admin_id].onMenu != 0:
+                                if str(event.text) == "Отменить":
                                     self.vk_session.method('messages.send',
                                                            {'user_id': event.user_id,
-                                                            'message': 'Вопрос добавлен',
+                                                            'message': 'Отмененно',
                                                             'random_id': 0,
                                                             'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
+                                    vk_admin_list[admin_id].onMenu = 0
+
+                                elif vk_admin_list[admin_id].onMenu == 2:
+                                    text_arr = str(event.text).split('___')
+                                    if len(text_arr) == 2:
+                                        new_qa = DB_methods.qa(0, text_arr[0], text_arr[1], nullForm=False)
+                                        print(list(question_model.wv.vocab))
+                                        model, question_model = DB_methods.addNewQAtoBase(new_qa)
+                                        print(list(question_model.wv.vocab))
+
+                                        vk_admin_list[admin_id].onMenu = 0
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Вопрос добавлен',
+                                                                'random_id': 0,
+                                                                'keyboard': self.return_keyboard(vk_admin_list[admin_id])})
+
+                                    else:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректный вопрос',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                elif vk_admin_list[admin_id].onMenu == 3:
+                                    try:
+                                        vkk = self.vk_session.get_api()
+                                        res = vkk.users.get(user_ids=event.text)
+                                        new_admin = self.getId(int(res[0]['id']), vk_admin_list)
+                                        if new_admin == -1:
+                                            new_user = _userVK(id= int(res[0]['id']), superUser=0, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
+                                            vk_admin_list.append(new_user)
+
+                                            addUser_VK(id=new_user.id, superUser=new_user.superUser, flname=new_user.flname)
+
+                                            vk_admin_list[admin_id].onMenu = 0
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': int(event.user_id),
+                                                                    'message': 'Админ добавлен',
+                                                                    'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                       vk_admin_list[admin_id])})
+                                        else:
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Администратор с таким id уже существует',
+                                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                                    except:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректную ссылку для добавления администратора',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                elif vk_admin_list[admin_id].onMenu == 4:
+                                    try:
+                                        vkk = self.vk_session.get_api()
+                                        res = vkk.users.get(user_ids=event.text)
+                                        new_admin = self.getId(int(res[0]['id']), vk_admin_list)
+                                        if new_admin == -1:
+                                            temp_user = _userVK(id=int(res[0]['id']), superUser=1, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
+                                            vk_admin_list.append(temp_user)
+
+                                            sup = 0
+                                            if temp_user.superUser:
+                                                sup = 1
+                                            addUser_VK(id=temp_user.id, superUser=sup, flname=temp_user.flname)
+
+                                            vk_admin_list[admin_id].onMenu = 0
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Супер администратор добавлен',
+                                                                    'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                       vk_admin_list[admin_id])})
+                                        else:
+
+                                            changeSuperUser_VK(vk_admin_list[new_admin].id,
+                                                               vk_admin_list[admin_id].superUser)
+                                            vk_admin_list[admin_id].onMenu = 0
+                                            vk_admin_list[new_admin].superUser = True
+
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Супер администратор добавлен',
+                                                                    'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                       vk_admin_list[admin_id])})
+
+                                    except:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректный id для добавление супер администратора', #TODO: буст с адмена до супера кидает эксепт
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                                elif vk_admin_list[admin_id].onMenu == 5:
+                                    try:
+                                        vkk = self.vk_session.get_api()
+                                        res = vkk.users.get(user_ids=event.text)
+                                        admin_for_delete = self.getId(int(res[0]['id']), vk_admin_list)
+                                        if not admin_for_delete is -1:
+
+                                            removeUser_VK(vk_admin_list[admin_for_delete].id)
+
+                                            vk_admin_list.remove(vk_admin_list[admin_for_delete])
+
+                                            vk_admin_list[admin_id].onMenu = 0
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Админ удален',
+                                                                    'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                       vk_admin_list[admin_id])})
+                                        else:
+
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Нет админа с таким id',
+                                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    except:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректный id администратора, которого хотите удалить',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                                elif vk_admin_list[admin_id].onMenu == 6:
+                                    try:
+                                        vkk = self.vk_session.get_api()
+                                        res = vkk.users.get(user_ids=event.text)
+                                        admin_for_clear = self.getId(int(res[0]['id']), vk_admin_list)
+                                        if admin_for_clear != -1:
+                                            vk_admin_list[admin_for_clear].superUser = False
+
+                                            changeSuperUser_VK(vk_admin_list[admin_for_clear].id,
+                                                               vk_admin_list[admin_for_clear].superUser)
+
+                                            vk_admin_list[admin_id].onMenu = 0
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Права успешно удалены',
+                                                                    'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                       vk_admin_list[admin_id])})
+                                        else:
+                                            self.vk_session.method('messages.send',
+                                                                   {'user_id': event.user_id,
+                                                                    'message': 'Нет админа с таким id',
+                                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    except:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректный id',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                                elif vk_admin_list[admin_id].onMenu == 7:
+                                    try:
+                                        DB_methods.removeQuestionFromDB(int(event.text))
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Вопрос удален',
+                                                                'random_id': 0, 'keyboard': self.return_keyboard(
+                                                                   vk_admin_list[admin_id])})
+                                    except:
+                                        self.vk_session.method('messages.send',
+                                                               {'user_id': event.user_id,
+                                                                'message': 'Введите корректный id',
+                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                            elif str(event.text) == "Добавить вопрос в базу данных":
+                                self.vk_session.method('messages.send',
+                                                       {'user_id': event.user_id,
+                                                        'message': 'Введите вопрос в формате Вопрос ___ Ответ',
+                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                vk_admin_list[admin_id].onMenu = 2
+                            elif str(event.text) == "Удалить вопрос из базы данных":
+                                self.vk_session.method('messages.send',
+                                                       {'user_id': event.user_id,
+                                                        'message': 'Введите id вопроса, который хотите удалить',
+                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+
+                                vk_admin_list[admin_id].onMenu = 7
+                            elif str(event.text) == "Помощь":
+                                #TODO: ОТПРАВКА ФАЙЛА HSE_FAQ_BOT_Инструкция_для_администратора.pdf
+                                _file = 'HSE_FAQ_BOT_admin.pdf'
+                                self.sendFile(event.user_id, _file, 'Инструкция')
+
+                            elif vk_admin_list[admin_id].superUser:
+                                if str(event.text) == "Добавить администратора":
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите id человека, которому хотите дать права администратора',
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    vk_admin_list[admin_id].onMenu = 3
+                                elif str(event.text) == "Добавить супер права":
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите id человека, которому хотите дать супер права',
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    vk_admin_list[admin_id].onMenu = 4
+                                elif str(event.text) == "Удалить администратора":
+                                    admList = self.getAdminList(vk_admin_list)
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите id человека, которому хотите снять права администратора\n' + admList,
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    vk_admin_list[admin_id].onMenu = 5
+                                elif str(event.text) == "Удалить супер права":
+                                    admList = self.getAdminList(vk_admin_list)
+                                    self.vk_session.method('messages.send',
+                                                           {'user_id': event.user_id,
+                                                            'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором\n' + admList,
+                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
+                                    vk_admin_list[admin_id].onMenu = 6
+                                elif str(event.text) == 'Загрузить список админов':
+                                    _file = file_creator.createXLSFileOfUsers_VK()
+                                    self.sendFile(event.user_id, _file, 'Список Админов')
+
+                                elif str(event.text) == '/usersTG':
+                                    _file = file_creator.createXLSFileOfUsers_TG()
+                                    self.sendFile(event.user_id, _file, 'Список Админов')
+
+                                elif str(event.text) == 'Загрузить список вопросов':
+                                    _file = file_creator.createXLSFileOfQuestions()
+                                    self.sendFile(event.user_id, _file, 'Список Вопросов')
 
                                 else:
+                                    answers = bot_logic.getAnswers(str(event.text), model, question_model, DB_methods.getListOfQAfromDB(),
+                                                         addNewQuestionToModel=False)
+                                    print(answers)
                                     self.vk_session.method('messages.send',
                                                            {'user_id': event.user_id,
-                                                            'message': 'Введите корректный вопрос',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                            elif vk_admin_list[admin_id].onMenu == 3:
-                                try:
-                                    vkk = self.vk_session.get_api()
-                                    res = vkk.users.get(user_ids=event.text)
-                                    new_admin = self.getId(int(res[0]['id']), vk_admin_list)
-                                    if new_admin == -1:
-                                        new_user = _userVK(id= int(res[0]['id']), superUser=0, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
-                                        vk_admin_list.append(new_user)
-
-                                        addUser_VK(id=new_user.id, superUser=new_user.superUser, flname=new_user.flname)
-
-                                        vk_admin_list[admin_id].onMenu = 0
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': int(event.user_id),
-                                                                'message': 'Админ добавлен',
-                                                                'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
-                                    else:
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Администратор с таким id уже существует',
-                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                                except:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Введите корректную ссылку для добавления администратора',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                            elif vk_admin_list[admin_id].onMenu == 4:
-                                try:
-                                    vkk = self.vk_session.get_api()
-                                    res = vkk.users.get(user_ids=event.text)
-                                    new_admin = self.getId(int(res[0]['id']), vk_admin_list)
-                                    if new_admin == -1:
-                                        temp_user = _userVK(id=int(res[0]['id']), superUser=1, flname=str(res[0]['first_name'] + ' ' + res[0]['last_name']))
-                                        vk_admin_list.append(temp_user)
-
-                                        sup = 0
-                                        if temp_user.superUser:
-                                            sup = 1
-                                        addUser_VK(id=temp_user.id, superUser=sup, flname=temp_user.flname)
-
-                                        vk_admin_list[admin_id].onMenu = 0
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Супер администратор добавлен',
-                                                                'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
-                                    else:
-
-                                        changeSuperUser_VK(vk_admin_list[new_admin].id,
-                                                           vk_admin_list[admin_id].superUser)
-                                        vk_admin_list[admin_id].onMenu = 0
-                                        vk_admin_list[new_admin].superUser = True
-
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Супер администратор добавлен',
-                                                                'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
-
-                                except:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id для добавление супер администратора', #TODO: буст с адмена до супера кидает эксепт
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                            elif vk_admin_list[admin_id].onMenu == 5:
-                                try:
-                                    vkk = self.vk_session.get_api()
-                                    res = vkk.users.get(user_ids=event.text)
-                                    admin_for_delete = self.getId(int(res[0]['id']), vk_admin_list)
-                                    if not admin_for_delete is -1:
-
-                                        removeUser_VK(vk_admin_list[admin_for_delete].id)
-
-                                        vk_admin_list.remove(vk_admin_list[admin_for_delete])
-
-                                        vk_admin_list[admin_id].onMenu = 0
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Админ удален',
-                                                                'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
-                                    else:
-
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Нет админа с таким id',
-                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                except:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id администратора, которого хотите удалить',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                            elif vk_admin_list[admin_id].onMenu == 6:
-                                try:
-                                    vkk = self.vk_session.get_api()
-                                    res = vkk.users.get(user_ids=event.text)
-                                    admin_for_clear = self.getId(int(res[0]['id']), vk_admin_list)
-                                    if admin_for_clear != -1:
-                                        vk_admin_list[admin_for_clear].superUser = False
-
-                                        changeSuperUser_VK(vk_admin_list[admin_for_clear].id,
-                                                           vk_admin_list[admin_for_clear].superUser)
-
-                                        vk_admin_list[admin_id].onMenu = 0
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Права успешно удалены',
-                                                                'random_id': 0, 'keyboard': self.return_keyboard(
-                                                                   vk_admin_list[admin_id])})
-                                    else:
-                                        self.vk_session.method('messages.send',
-                                                               {'user_id': event.user_id,
-                                                                'message': 'Нет админа с таким id',
-                                                                'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                except:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                            elif vk_admin_list[admin_id].onMenu == 7:
-                                try:
-                                    DB_methods.removeQuestionFromDB(int(event.text))
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Вопрос удален',
-                                                            'random_id': 0, 'keyboard': self.return_keyboard(
-                                                               vk_admin_list[admin_id])})
-                                except:
-                                    self.vk_session.method('messages.send',
-                                                           {'user_id': event.user_id,
-                                                            'message': 'Введите корректный id',
-                                                            'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                        elif str(event.text) == "Добавить вопрос в базу данных":
-                            self.vk_session.method('messages.send',
-                                                   {'user_id': event.user_id,
-                                                    'message': 'Введите вопрос в формате Вопрос ___ Ответ',
-                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                            vk_admin_list[admin_id].onMenu = 2
-                        elif str(event.text) == "Удалить вопрос из базы данных":
-                            self.vk_session.method('messages.send',
-                                                   {'user_id': event.user_id,
-                                                    'message': 'Введите id вопроса, который хотите удалить',
-                                                    'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-
-                            vk_admin_list[admin_id].onMenu = 7
-                        elif str(event.text) == "Помощь":
-                            #TODO: ОТПРАВКА ФАЙЛА HSE_FAQ_BOT_Инструкция_для_администратора.pdf
-                            _file = 'HSE_FAQ_BOT_admin.pdf'
-                            self.sendFile(event.user_id, _file, 'Инструкция')
-
-                        elif vk_admin_list[admin_id].superUser:
-                            if str(event.text) == "Добавить администратора":
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите дать права администратора',
-                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                vk_admin_list[admin_id].onMenu = 3
-                            elif str(event.text) == "Добавить супер права":
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите дать супер права',
-                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                vk_admin_list[admin_id].onMenu = 4
-                            elif str(event.text) == "Удалить администратора":
-                                admList = self.getAdminList(vk_admin_list)
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите снять права администратора\n' + admList,
-                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                vk_admin_list[admin_id].onMenu = 5
-                            elif str(event.text) == "Удалить супер права":
-                                admList = self.getAdminList(vk_admin_list)
-                                self.vk_session.method('messages.send',
-                                                       {'user_id': event.user_id,
-                                                        'message': 'Введите id человека, которому хотите снять супер права, при этом человек останется администратором\n' + admList,
-                                                        'random_id': 0, 'keyboard': self.vk_mini_keyboard})
-                                vk_admin_list[admin_id].onMenu = 6
-                            elif str(event.text) == 'Загрузить список админов':
-                                _file = file_creator.createXLSFileOfUsers_VK()
-                                self.sendFile(event.user_id, _file, 'Список Админов')
-
-                            elif str(event.text) == '/usersTG':
-                                _file = file_creator.createXLSFileOfUsers_TG()
-                                self.sendFile(event.user_id, _file, 'Список Админов')
-
-                            elif str(event.text) == 'Загрузить список вопросов':
-                                _file = file_creator.createXLSFileOfQuestions()
-                                self.sendFile(event.user_id, _file, 'Список Вопросов')
-
+                                                            'message': answers[0],
+                                                            'random_id': 0, 'keyboard': self.vk_super_keyboard})
                             else:
                                 answers = bot_logic.getAnswers(str(event.text), model, question_model, DB_methods.getListOfQAfromDB(),
                                                      addNewQuestionToModel=False)
@@ -425,7 +435,8 @@ class VkThread(threading.Thread):
                                 self.vk_session.method('messages.send',
                                                        {'user_id': event.user_id,
                                                         'message': answers[0],
-                                                        'random_id': 0, 'keyboard': self.vk_super_keyboard})
+                                                        'random_id': 0, 'keyboard': self.vk_keyboard})
+
                         else:
                             answers = bot_logic.getAnswers(str(event.text), model, question_model, DB_methods.getListOfQAfromDB(),
                                                  addNewQuestionToModel=False)
@@ -433,13 +444,7 @@ class VkThread(threading.Thread):
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
                                                     'message': answers[0],
-                                                    'random_id': 0, 'keyboard': self.vk_keyboard})
-
-                    else:
-                        answers = bot_logic.getAnswers(str(event.text), model, question_model, DB_methods.getListOfQAfromDB(),
-                                             addNewQuestionToModel=False)
-                        print(answers)
-                        self.vk_session.method('messages.send',
-                                               {'user_id': event.user_id,
-                                                'message': answers[0],
-                                                'random_id': 0, 'keyboard': self.vk_null_keyboard})
+                                                    'random_id': 0, 'keyboard': self.vk_null_keyboard})
+            except:
+                print('connection lost. Trying to reconect...')
+                time.sleep(1)
