@@ -696,7 +696,7 @@ class TelegramThread(threading.Thread):
                         telegram_admin_list[admin_id].onMenu = 0
 
                     elif telegram_admin_list[admin_id].onMenu == 2:
-                        text_arr = message.text.split(':');
+                        text_arr = message.text.split('___');
                         if len(text_arr) == 2:
                             new_qa = qa(0, text_arr[0], text_arr[1], nullForm=False)
                             print(list(question_modelTG.wv.vocab))
@@ -802,17 +802,17 @@ class TelegramThread(threading.Thread):
 
                 elif message.text == "Добавить вопрос в базу данных":
                     self.bot.send_message(message.chat.id,
-                                          'Введите вопрос в формате Вопрос : Ответ',
+                                          'Введите вопрос в формате Вопрос ___ Ответ',
                                           reply_markup=self.telegram_mini_keyboard)
                     telegram_admin_list[admin_id].onMenu = 2
                 elif message.text == "Помощь":
                     if telegram_admin_list[admin_id].superUser:
                         self.bot.send_message(message.chat.id,
-                                              'супер админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                              'Справка для супер админа находится в руководстве пользователя на страницах 1234',
                                               reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
                     else:
                         self.bot.send_message(message.chat.id,
-                                              'обычный админ ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы',
+                                              'Справка для админа находится в руководстве пользователя на страницах 1234',
                                               reply_markup=self.return_keyboard(telegram_admin_list[admin_id]))
 
                 elif telegram_admin_list[admin_id].superUser:
@@ -993,7 +993,7 @@ class VkThread(threading.Thread):
                                 vk_admin_list[admin_id].onMenu = 0
 
                             elif vk_admin_list[admin_id].onMenu == 2:
-                                text_arr = str(event.text).split(':');
+                                text_arr = str(event.text).split('___')
                                 if len(text_arr) == 2:
                                     new_qa = qa(0, text_arr[0], text_arr[1], nullForm=False)
                                     print(list(question_model.wv.vocab))
@@ -1153,7 +1153,7 @@ class VkThread(threading.Thread):
                         elif str(event.text) == "Добавить вопрос в базу данных":
                             self.vk_session.method('messages.send',
                                                    {'user_id': event.user_id,
-                                                    'message': 'Введите вопрос в формате Вопрос : Ответ',
+                                                    'message': 'Введите вопрос в формате Вопрос ___ Ответ',
                                                     'random_id': 0, 'keyboard': self.vk_mini_keyboard})
                             vk_admin_list[admin_id].onMenu = 2
                         elif str(event.text) == "Удалить вопрос из базы данных":
@@ -1253,4 +1253,4 @@ vk_admin_list = getUsersFromDB_VK()
 createXLSFileOfQuestions()
 
 vk.start()
-#tel.start()
+tel.start()
