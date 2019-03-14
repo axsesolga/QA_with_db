@@ -376,11 +376,8 @@ class VkThread(threading.Thread):
                             vk_admin_list[admin_id].onMenu = 7
                         elif str(event.text) == "Помощь":
                             #TODO: ОТПРАВКА ФАЙЛА HSE_FAQ_BOT_Инструкция_для_администратора.pdf
-                            self.vk_session.method('messages.send',
-                                                   {'user_id': event.user_id,
-                                                    'message': 'up to date',
-                                                    'random_id': 0, 'keyboard': self.return_keyboard(
-                                                       vk_admin_list[admin_id])})
+                            _file = 'HSE_FAQ_BOT_admin.pdf'
+                            self.sendFile(event.user_id, _file, 'Инструкция')
 
                         elif vk_admin_list[admin_id].superUser:
                             if str(event.text) == "Добавить администратора":

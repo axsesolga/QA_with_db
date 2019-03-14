@@ -81,7 +81,8 @@ import DB_methods
 
 class TelegramThread(threading.Thread):
     #TODO тэк токен поменяйте
-    telegram_token = '713680560:AAG65APKYH5mZy69dpPcwLYHZ47Rv1JavRE'
+    #telegram_token = '713680560:AAG65APKYH5mZy69dpPcwLYHZ47Rv1JavRE'
+    telegram_token = '774853254:AAFB-BStBb4f3p9ts3TZ7i7Qx5Sw6m_vWJk'
     bot = telebot.TeleBot(telegram_token)
     first_m = 'Здравствуйте! Этот FAQ-бот поможет Вам получить ответы на самые часто задаваемые вопросы касательно учебы в ВШЭ. Правила пользования ботом:\n' \
               '-Содержание вопросов должно быть сформулировано кратко и без лишней информации\n-Слова в вопросе не должны содержать ошибок\n' \
