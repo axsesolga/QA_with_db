@@ -352,6 +352,7 @@ class VkThread(threading.Thread):
                                 elif vk_admin_list[admin_id].onMenu == 7:
                                     try:
                                         DB_methods.removeQuestionFromDB(int(event.text))
+                                        vk_admin_list[admin_id].onMenu = 0
                                         self.vk_session.method('messages.send',
                                                                {'user_id': event.user_id,
                                                                 'message': 'Вопрос удален',
