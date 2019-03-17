@@ -149,7 +149,7 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
 #получение ответов из одной строки вопроса. Минусы - каждыый новый вопрос заного подгружает базу
 import DB_methods
 import  datetime
-def getAnswers_simpleVersion(question, answer = '', path='QA.bd'):
+def getAnswers_simpleVersion(question, answer = '', path='QA.db'):
     #print('getAnswersSimple_start\t', question)
     #получение из БД вопросов в виде массива массивов (массива предложений, каждое предложение - массив слов)
     null_q_arr = DB_methods.getListOfQAfromDB(path)
