@@ -1,7 +1,4 @@
 import language_cleaner_RusVectores
-
-
-
 import sys
 import wget as wget
 from gensim.models import Word2Vec
@@ -145,15 +142,30 @@ def getAnswers(question, srcModel, targetModel, QAlist, addNewQuestionToModel=Fa
             if q[0] == qa.null_question:
                 answers.append(qa.answer)
                 continue
+
+
     return answers
 
 #получение ответов из одной строки вопроса. Минусы - каждыый новый вопрос заного подгружает базу
 import DB_methods
-def getAnswers_simpleVersion(question, path='QA.bd'):
+import  datetime
+def getAnswers_simpleVersion(question, answer = '', path='QA.bd'):
+    #print('getAnswersSimple_start\t', question)
     #получение из БД вопросов в виде массива массивов (массива предложений, каждое предложение - массив слов)
-    null_q_arr = DB_methods.getNullQuestionsFromDB(path)
+    null_q_arr = DB_methods.getListOfQAfromDB(path)
     #подгрузка модели всех слов вопросов
     model = trainModel('QA.w2v', null_q_arr)
     #подгрузка модели вопросов
     question_model = getQuestionModel(null_q_arr, model, loadOldModel=True)
-    return getAnswers(question, model, question_model, null_q_arr)
+    answers = getAnswers(question, model, question_model, null_q_arr)
+    #print('getAnswersSimple_end\t', question, answers[0], datetime.datetime.now())
+
+    #для парелельной работы методов
+    from multiprocessing import Value
+    answer.value = answers[0]
+    return answers
+
+
+'''
+
+'''
