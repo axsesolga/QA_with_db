@@ -84,7 +84,7 @@ import file_creator
 
 class VkThread(threading.Thread):
 
-    vk_token = "3100a6756c1f3f6ec91dfcd3212ffc664368f51dc77de964ca67c02e0dd8a255a0f3e78477b845f71a55d"
+    vk_token = "570036a833509d794b32224e32890ed0be12aee9624e0ed0905548f5a6cbcc559ad1be9c9a83ce3c50c27"
     vk_session = vk_api.VkApi(token=vk_token)
     longpoll = VkLongPoll(vk_session)
 
@@ -210,11 +210,7 @@ class UserThread(threading.Thread):
         from multiprocessing import Process, Value, Manager
         from ctypes import c_char_p
 
-        manager = Manager()
-        answer = manager.Value(c_char_p, "")
-        proc = Process(target=bot_logic.getAnswers_simpleVersion, args=(self.local_event.text, answer))
-        proc.start()
-        proc.join()
+
 
         if admin_id != -1:
             if self.local_vk_admin_list[admin_id].onMenu != 0:
@@ -446,17 +442,32 @@ class UserThread(threading.Thread):
                     self.sendFile(self.local_event.user_id, _file, 'Список Вопросов')
 
                 else:
+                    manager = Manager()
+                    answer = manager.Value(c_char_p, "")
+                    proc = Process(target=bot_logic.getAnswers_simpleVersion, args=(self.local_event.text, answer))
+                    proc.start()
+                    proc.join()
                     self.vk_session.method('messages.send',
                                            {'user_id': self.local_event.user_id,
                                             'message': str('Вопрос: ' + self.local_event.text + '\n') + answer.value,
                                             'random_id': 0, 'keyboard': self.vk_super_keyboard})
             else:
+                manager = Manager()
+                answer = manager.Value(c_char_p, "")
+                proc = Process(target=bot_logic.getAnswers_simpleVersion, args=(self.local_event.text, answer))
+                proc.start()
+                proc.join()
                 self.vk_session.method('messages.send',
                                        {'user_id': self.local_event.user_id,
                                         'message': str('Вопрос: ' + self.local_event.text + '\n') + answer.value,
                                         'random_id': 0, 'keyboard': self.vk_keyboard})
 
         else:
+            manager = Manager()
+            answer = manager.Value(c_char_p, "")
+            proc = Process(target=bot_logic.getAnswers_simpleVersion, args=(self.local_event.text, answer))
+            proc.start()
+            proc.join()
             self.vk_session.method('messages.send',
                                    {'user_id': self.local_event.user_id,
                                     'message': str('Вопрос: ' + self.local_event.text + '\n') + answer.value,
